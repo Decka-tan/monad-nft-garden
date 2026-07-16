@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { BrowserProvider, Contract, ethers } from "ethers";
 import { buildReason, makeCollection, NftHealth, statusLabel, Status } from "./data";
-import { GARDEN_ABI, GARDEN_CONTRACT_ADDRESS, getCheckInKey, MONAD_TESTNET } from "./contract";
+import { GARDEN_ABI, GARDEN_CONTRACT_ADDRESS, getCheckInKey, MONAD_NETWORKS, MonadNetworkKey } from "./contract";
 
 const demoWallet = "0x7d3A5a0F56f2E9fb000000000000000000000001";
 const demoCollection = "0x0000000000000000000000000000000000000001";
@@ -47,15 +47,18 @@ const initialChain: ChainState = {
   status: "Wallet not connected",
 };
 
-function Creature({ nft, large = false }: { nft: NftHealth; large?: boolean }) {
+function Creature({ nft, large = false, useSprite = false }: { nft: NftHealth; large?: boolean; useSprite?: boolean }) {
   const glow = nft.status === "alive" ? "34px" : nft.status === "watch" ? "12px" : "0px";
   const glowColor = nft.status === "alive" ? `${nft.colors[0]}66` : nft.status === "watch" ? "#f3c45b55" : "transparent";
+  const spriteId = String(((nft.id - 1) % 20) + 1).padStart(2, "0");
+  const overlayOffset = nft.status === "alive" ? 0 : nft.status === "watch" ? 3 : 6;
+  const overlayId = String(overlayOffset + ((nft.id - 1) % 3) + 1).padStart(2, "0");
 
   return (
     <>
       <div className="pedestal" />
       <div
-        className="creature"
+        className={`creature ${useSprite ? "use-sprite" : ""}`}
         style={
           {
             "--size": `${large ? nft.size * 1.7 : nft.size}px`,
@@ -66,7 +69,16 @@ function Creature({ nft, large = false }: { nft: NftHealth; large?: boolean }) {
             "--glow-color": glowColor,
           } as React.CSSProperties
         }
-      />
+      >
+        {useSprite && <img className="creature-sprite" src={`/assets/creatures/creature-${spriteId}.png`} alt="" />}
+        {useSprite && <img className="health-overlay" src={`/assets/overlays/health-${overlayId}.png`} alt="" />}
+        <span className="creature-leaf" aria-hidden="true" />
+        <span className="creature-face" aria-hidden="true">
+          <span className="creature-eye" />
+          <span className="creature-eye" />
+          <span className="creature-mouth" />
+        </span>
+      </div>
     </>
   );
 }
@@ -80,6 +92,10 @@ function getStatusClass(status: Status) {
   return status;
 }
 
+function isContractConfigured() {
+  return ethers.isAddress(GARDEN_CONTRACT_ADDRESS) && GARDEN_CONTRACT_ADDRESS !== zeroAddress;
+}
+
 async function getBrowserProvider() {
   if (!window.ethereum) {
     throw new Error("No injected wallet found. Install MetaMask or another EIP-1193 wallet.");
@@ -87,22 +103,23 @@ async function getBrowserProvider() {
   return new BrowserProvider(window.ethereum);
 }
 
-async function switchToMonad() {
+async function switchToMonad(networkKey: MonadNetworkKey) {
   if (!window.ethereum) {
     throw new Error("No injected wallet found.");
   }
+  const network = MONAD_NETWORKS[networkKey];
 
   try {
     await window.ethereum.request?.({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId: MONAD_TESTNET.chainId }],
+      params: [{ chainId: network.chainId }],
     });
   } catch (error) {
     const code = typeof error === "object" && error && "code" in error ? (error as { code?: number }).code : undefined;
     if (code !== 4902) throw error;
     await window.ethereum.request?.({
       method: "wallet_addEthereumChain",
-      params: [MONAD_TESTNET],
+      params: [network],
     });
   }
 }
@@ -113,8 +130,9 @@ export default function App() {
   const [nfts, setNfts] = useState(() => makeCollection(demoWallet));
   const [filter, setFilter] = useState<Status | "all">("all");
   const [selected, setSelected] = useState<NftHealth | null>(null);
-  const [referenceImage, setReferenceImage] = useState("/assets/sample-nft.png");
+  const [referenceImage, setReferenceImage] = useState("/assets/featured-specimen.png");
   const [chain, setChain] = useState<ChainState>(initialChain);
+  const [networkKey, setNetworkKey] = useState<MonadNetworkKey>("testnet");
 
   const visible = useMemo(() => nfts.filter((nft) => filter === "all" || nft.status === filter), [filter, nfts]);
   const counts = useMemo(
@@ -133,6 +151,13 @@ export default function App() {
   const avgFloor = nfts.reduce((sum, nft) => sum + nft.floorNow, 0) / nfts.length;
   const holders = nfts.reduce((sum, nft) => sum + nft.holders, 0);
   const lastTrade = Math.max(8, 90 - nfts[0].trades);
+  const canWriteCheckIn =
+    isContractConfigured() &&
+    ethers.isAddress(contractInput) &&
+    Boolean(chain.account) &&
+    Boolean(chain.owner) &&
+    chain.owner !== "Deploy contract, then set VITE_GARDEN_CONTRACT_ADDRESS" &&
+    chain.account.toLowerCase() === chain.owner.toLowerCase();
 
   function analyze(event: FormEvent) {
     event.preventDefault();
@@ -144,7 +169,7 @@ export default function App() {
 
   async function connectWallet() {
     try {
-      await switchToMonad();
+      await switchToMonad(networkKey);
       const provider = await getBrowserProvider();
       const signer = await provider.getSigner();
       const network = await provider.getNetwork();
@@ -153,10 +178,10 @@ export default function App() {
         ...chain,
         account,
         chainId: `0x${network.chainId.toString(16)}`,
-        status: "Connected to Monad Testnet",
+        status: `Connected to ${MONAD_NETWORKS[networkKey].chainName}`,
       };
 
-      if (GARDEN_CONTRACT_ADDRESS !== zeroAddress) {
+      if (isContractConfigured()) {
         const contract = new Contract(GARDEN_CONTRACT_ADDRESS, GARDEN_ABI, provider);
         next.owner = await contract.owner();
       } else {
@@ -171,8 +196,11 @@ export default function App() {
 
   async function readCheckIn(nft: NftHealth) {
     try {
-      if (GARDEN_CONTRACT_ADDRESS === zeroAddress) {
+      if (!isContractConfigured()) {
         throw new Error("Set VITE_GARDEN_CONTRACT_ADDRESS after deployment.");
+      }
+      if (!ethers.isAddress(contractInput)) {
+        throw new Error("Collection contract must be a full 0x address before reading on-chain.");
       }
       const provider = await getBrowserProvider();
       const contract = new Contract(GARDEN_CONTRACT_ADDRESS, GARDEN_ABI, provider);
@@ -191,16 +219,20 @@ export default function App() {
 
   async function writeCheckIn(nft: NftHealth) {
     try {
-      if (GARDEN_CONTRACT_ADDRESS === zeroAddress) {
+      if (!isContractConfigured()) {
         throw new Error("Set VITE_GARDEN_CONTRACT_ADDRESS after deployment.");
       }
       if (!ethers.isAddress(contractInput)) {
         throw new Error("Collection contract must be a full 0x address before writing on-chain.");
       }
 
-      await switchToMonad();
+      await switchToMonad(networkKey);
       const provider = await getBrowserProvider();
       const signer = await provider.getSigner();
+      const account = await signer.getAddress();
+      if (chain.owner && account.toLowerCase() !== chain.owner.toLowerCase()) {
+        throw new Error("Only the deployed Garden contract owner can write check-ins.");
+      }
       const contract = new Contract(GARDEN_CONTRACT_ADDRESS, GARDEN_ABI, signer);
       const spriteCid = `ipfs://sprite-${nft.seed.toString(16)}`;
       const dataCid = `ipfs://analysis-${nft.seed.toString(16)}`;
@@ -228,6 +260,18 @@ export default function App() {
           <span>Monad NFT Garden</span>
         </a>
         <div className="nav-actions">
+          <div className="network-toggle" role="group" aria-label="Select Monad network">
+            {(["testnet", "mainnet"] as MonadNetworkKey[]).map((item) => (
+              <button
+                key={item}
+                className={`filter ${networkKey === item ? "is-active" : ""}`}
+                type="button"
+                onClick={() => setNetworkKey(item)}
+              >
+                {item === "testnet" ? "Testnet" : "Mainnet"}
+              </button>
+            ))}
+          </div>
           <button className="icon-button" type="button" onClick={connectWallet}>
             {chain.account ? shortAddress(chain.account) : "Connect"}
           </button>
@@ -239,11 +283,11 @@ export default function App() {
 
       <section className="hero compact-hero" aria-labelledby="hero-title">
         <div className="hero-copy">
-          <p className="kicker">Living portfolio monitor for Monad NFTs</p>
+          <p className="kicker">Monad testnet garden desk</p>
           <h1 id="hero-title">Is Monad NFT really dead?</h1>
           <p className="hero-text">
-            Paste a wallet or collection contract. This sandbox turns portfolio health into living creatures with
-            on-chain check-ins for the stats that matter.
+            Drop a wallet or collection into the planter. Each token gets a little garden body, a health mood,
+            and an on-chain check-in trail when you want to stamp it.
           </p>
           <form className="scan-form" onSubmit={analyze}>
             <label className="input-wrap">
@@ -255,15 +299,18 @@ export default function App() {
             </button>
           </form>
           <div className="signal-row" aria-label="Summary metrics">
-            <div><strong>{counts.alive}</strong><span>alive</span></div>
-            <div><strong>{counts.watch}</strong><span>watch</span></div>
-            <div><strong>{counts.dead}</strong><span>dead</span></div>
+            <div><strong>{counts.alive}</strong><span>sprouting</span></div>
+            <div><strong>{counts.watch}</strong><span>wilt watch</span></div>
+            <div><strong>{counts.dead}</strong><span>dormant</span></div>
           </div>
         </div>
 
         <aside className="snapshot" aria-label="Garden health snapshot">
-          <div className="snapshot-head"><span>Portfolio health</span><strong>{portfolioScore}</strong></div>
-          <div className="health-orbit" aria-hidden="true"><span /><span /><span /><span /></div>
+          <div className="snapshot-head"><span>Garden score</span><strong>{portfolioScore}</strong></div>
+          <div className="health-orbit" aria-hidden="true">
+            <img src="/assets/featured-specimen.png" alt="" />
+            <span /><span /><span /><span />
+          </div>
           <dl className="snapshot-list">
             <div><dt>Floor ATH</dt><dd>{topAth.toFixed(1)} MON</dd></div>
             <div><dt>Current floor</dt><dd>{avgFloor.toFixed(1)} MON</dd></div>
@@ -276,7 +323,7 @@ export default function App() {
       <section className="workspace garden-first" aria-label="NFT sandbox">
         <aside className="control-panel">
           <div className="panel-section">
-            <h2>On-chain controls</h2>
+            <h2>Garden ledger</h2>
             <p>{chain.status}</p>
           </div>
           <div className="panel-section chain-card">
@@ -295,12 +342,12 @@ export default function App() {
               <input value={contractInput} onChange={(event) => setContractInput(event.target.value)} />
             </label>
             <label className="input-wrap compact">
-              <span>Reference NFT image</span>
+              <span>Sprite reference</span>
               <input type="file" accept="image/*" onChange={(event) => handleImage(event.target.files?.[0])} />
             </label>
             <div className="sample-card">
               <img src={referenceImage} alt="Reference NFT sprite" />
-              <span>Image-to-image source example</span>
+              <span>Reference pinned for the selected specimen</span>
             </div>
           </div>
           <div className="panel-section">
@@ -317,13 +364,13 @@ export default function App() {
         <div className="garden-wrap">
           <div className="garden-toolbar">
             <div>
-              <h2>Live garden</h2>
+              <h2>Specimen beds</h2>
               <p>20 NFTs analyzed from {walletInput.slice(0, 10)}...</p>
             </div>
             <div className="filter-group" role="group" aria-label="Filter NFTs">
               {(["all", "alive", "watch", "dead"] as Array<Status | "all">).map((item) => (
                 <button key={item} className={`filter ${filter === item ? "is-active" : ""}`} type="button" onClick={() => setFilter(item)}>
-                  {item === "all" ? "All" : statusLabel(item)}
+                  {item === "all" ? "All" : item === "alive" ? "Sprout" : item === "watch" ? "Watch" : "Dormant"}
                 </button>
               ))}
             </div>
@@ -348,7 +395,7 @@ export default function App() {
                       <strong>{nft.name}</strong>
                       <span>#{String(nft.id).padStart(3, "0")} / score {nft.score}</span>
                     </span>
-                    <span className="status-pill">{statusLabel(nft.status)}</span>
+                  <span className="status-pill">{nft.status === "alive" ? "Sprout" : nft.status === "watch" ? "Watch" : "Dormant"}</span>
                   </span>
                 </button>
               </article>
@@ -367,11 +414,11 @@ export default function App() {
                 <Creature nft={selected} large />
               </div>
               <div className="modal-body">
-                <p className="kicker">{statusLabel(selected.status)} / health score {selected.score}</p>
+                <p className="kicker">{selected.status === "alive" ? "Sprout" : selected.status === "watch" ? "Watch" : "Dormant"} / health score {selected.score}</p>
                 <h2 id="modal-title">{selected.name} #{String(selected.id).padStart(3, "0")}</h2>
                 <p>
-                  A unique deterministic creature generated from token identity. Production can swap this for a
-                  cached image-to-image pixel sprite stored as an IPFS CID.
+                  This specimen is grown from token activity: floor resilience, trade pulse, holder spread,
+                  and rarity signals all nudge the garden mood.
                 </p>
                 <dl className="metric-grid">
                   {[
@@ -388,7 +435,15 @@ export default function App() {
                   ))}
                 </dl>
                 <div className="modal-actions">
-                  <button className="primary-button" type="button" onClick={() => writeCheckIn(selected)}>Write check-in</button>
+                  <button
+                    className="primary-button"
+                    type="button"
+                    disabled={!canWriteCheckIn}
+                    title={canWriteCheckIn ? "Store this health check-in on-chain" : "Connect the Garden contract owner wallet to write"}
+                    onClick={() => writeCheckIn(selected)}
+                  >
+                    Write check-in
+                  </button>
                   <button className="ghost-button" type="button" onClick={() => readCheckIn(selected)}>Read on-chain</button>
                 </div>
                 <div className="reason-box">

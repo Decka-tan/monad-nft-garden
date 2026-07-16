@@ -8,6 +8,8 @@
     "preview": "vite preview --host 127.0.0.1 --port 3010 --strictPort",
     "compile": "hardhat compile",
     "deploy:monad": "hardhat run scripts/deploy.ts --network monadTestnet",
+    "deploy:monad:testnet": "hardhat run scripts/deploy.ts --network monadTestnet",
+    "deploy:monad:mainnet": "hardhat run scripts/deploy.ts --network monadMainnet",
     "verify:monad": "hardhat verify --network monadTestnet"
   },
   "dependencies": {

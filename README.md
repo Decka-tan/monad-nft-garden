@@ -33,6 +33,7 @@ Replace the mock data in `app.js` with:
 
 ## Monad deploy notes
 
+Monad Mainnet uses chain ID `143`, symbol `MON`, and RPC `https://rpc.monad.xyz`.
 Monad Testnet uses chain ID `10143`, symbol `MON`, and RPC `https://testnet-rpc.monad.xyz`.
 Use `contracts/NFTGardenPassport.sol` as the minimal on-chain record for sprite and analysis CIDs.
 
@@ -42,6 +43,12 @@ Hardhat flow:
 cp .env.example .env
 npm run compile
 npm run deploy:monad
+```
+
+For mainnet deploys, run:
+
+```bash
+npx hardhat run scripts/deploy.ts --network monadMainnet
 ```
 
 After deploy, set `VITE_GARDEN_CONTRACT_ADDRESS` in `.env`, restart the dev server, then use the modal buttons:

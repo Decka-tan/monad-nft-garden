@@ -24,6 +24,7 @@ contract NFTGardenPassport {
 
     error NotOwner();
     error InvalidScore();
+    error InvalidOwner();
 
     constructor() {
         owner = msg.sender;
@@ -55,6 +56,7 @@ contract NFTGardenPassport {
     }
 
     function transferOwnership(address nextOwner) external onlyOwner {
+        if (nextOwner == address(0)) revert InvalidOwner();
         owner = nextOwner;
     }
 }

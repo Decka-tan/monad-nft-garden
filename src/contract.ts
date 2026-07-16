@@ -1,16 +1,31 @@
 import { ethers } from "ethers";
 
-export const MONAD_TESTNET = {
-  chainId: "0x279f",
-  chainName: "Monad Testnet",
-  nativeCurrency: {
-    name: "Monad",
-    symbol: "MON",
-    decimals: 18,
+export const MONAD_NETWORKS = {
+  testnet: {
+    chainId: "0x279f",
+    chainName: "Monad Testnet",
+    nativeCurrency: {
+      name: "Monad",
+      symbol: "MON",
+      decimals: 18,
+    },
+    rpcUrls: [import.meta.env.VITE_MONAD_TESTNET_RPC_URL || import.meta.env.VITE_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz"],
+    blockExplorerUrls: ["https://testnet.monadvision.com"],
   },
-  rpcUrls: [import.meta.env.VITE_MONAD_RPC_URL || "https://testnet-rpc.monad.xyz"],
-  blockExplorerUrls: ["https://testnet.monadexplorer.com"],
-};
+  mainnet: {
+    chainId: "0x8f",
+    chainName: "Monad Mainnet",
+    nativeCurrency: {
+      name: "Monad",
+      symbol: "MON",
+      decimals: 18,
+    },
+    rpcUrls: [import.meta.env.VITE_MONAD_MAINNET_RPC_URL || "https://rpc.monad.xyz"],
+    blockExplorerUrls: ["https://monadvision.com"],
+  },
+} as const;
+
+export type MonadNetworkKey = keyof typeof MONAD_NETWORKS;
 
 export const GARDEN_CONTRACT_ADDRESS =
   import.meta.env.VITE_GARDEN_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000";
