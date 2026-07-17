@@ -4,4 +4,9 @@ cache/
 artifacts/
 typechain-types/
 .env
+.env.local
 *.log
+server/dist/
+server/node_modules/
+.vercel
+coverage/

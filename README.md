@@ -1,69 +1,131 @@
 # Monad NFT Garden
 
-A living NFT portfolio health dashboard for Monad. The sandbox is the interface: each NFT becomes a creature whose state reflects floor resilience, trade recency, holder spread, and trait or rarity signals.
+A living NFT portfolio health sandbox for Monad. Each NFT becomes a creature whose mood reflects floor resilience, trade recency, holder spread, and rarity signals.
 
-## Run
+**Tagline:** *Is Monad NFT really dead? We make these alive with this Sandbox.*
+
+## Stack
+
+| Layer | Tech |
+|-------|------|
+| Frontend | React 19 + Vite + ethers |
+| Backend API | Hono + Zod (TypeScript) |
+| DB (optional) | PostgreSQL + Drizzle |
+| Cache/jobs (optional) | Redis + BullMQ |
+| Chain | Monad testnet/mainnet + `NFTGardenPassport` |
+| Deploy | **Vercel** (static FE + serverless `/api`) |
+
+Full backend design: [`docs/BACKEND_STACK.md`](./docs/BACKEND_STACK.md)
+
+## Quick start (local)
+
+### 1) API
 
 ```bash
+cd server
+cp .env.example .env
 npm install
 npm run dev
 ```
 
-The app runs on `http://127.0.0.1:3010` by default so it does not collide with other local Vite projects.
+API: `http://127.0.0.1:8787`
 
-## What is implemented
+### 2) Web
 
-- Wallet or collection input with deterministic analysis for offline demos.
-- 20-NFT garden grid with unique deterministic creatures per token.
-- Health filters for alive, watch, and dead.
-- Clickable NFT detail modal with minter, floor ATH, current floor, holders, traits, rarity, mint supply, and score explanation.
-- Reference image upload slot to demo the future image-to-image creature pipeline.
-- Wallet connect, Monad Testnet network switching, contract read, and contract write actions.
-- Solidity contract for storing generated sprite CIDs and health check-ins.
+```bash
+# repo root
+npm install
+cp .env.example .env   # optional
+npm run dev
+```
 
-## Production wiring
+Web: `http://127.0.0.1:3010`  
+Vite proxies `/api/*` → API `:8787`.
 
-Replace the mock data in `app.js` with:
+Or two terminals:
 
-1. Wallet NFT ownership from an indexer.
-2. ERC-721 metadata and image URLs from token URI data.
-3. Collection activity metrics from marketplace or indexer APIs.
-4. One-time image-to-image generation per NFT, cached by `chainId:collection:tokenId`.
-5. Frontend-only overlays for health changes so each NFT stays visually unique without regenerating every state.
+```bash
+npm run dev:api
+npm run dev:web
+```
 
-## Monad deploy notes
+### Optional infra
 
-Monad Mainnet uses chain ID `143`, symbol `MON`, and RPC `https://rpc.monad.xyz`.
-Monad Testnet uses chain ID `10143`, symbol `MON`, and RPC `https://testnet-rpc.monad.xyz`.
-Use `contracts/NFTGardenPassport.sol` as the minimal on-chain record for sprite and analysis CIDs.
+```bash
+npm run infra:up   # postgres + redis + minio
+```
 
-Hardhat flow:
+`MOCK_MODE=true` (default) needs **no** database — deterministic garden data for demos.
+
+## Deploy on Vercel
+
+1. Push this repo to GitHub.
+2. [vercel.com/new](https://vercel.com/new) → import the repo.
+3. Framework: **Vite** (auto from `vercel.json`).
+4. Env vars (optional):
+
+| Name | Value | Notes |
+|------|--------|------|
+| `MOCK_MODE` | `true` | Default; works without DB |
+| `DEFAULT_CHAIN_ID` | `10143` | Monad testnet |
+| `CORS_ORIGIN` | `*` | Or your production domain |
+| `VITE_GARDEN_CONTRACT_ADDRESS` | `0x…` | After contract deploy |
+| `VITE_GARDEN_API_URL` | *(leave empty)* | Same-origin `/api` on Vercel |
+
+5. Deploy. Open the URL → Analyze wallet → click NFT → stats + **Awaken creature**.
+
+CLI:
+
+```bash
+npx vercel
+```
+
+## What works today
+
+- Wallet / collection analyze via **Garden API** (mock deterministic health)
+- 20-NFT sandbox grid + filters (alive / watch / dead)
+- Detail modal: minter, floor ATH/now, holders, traits, rarity, score reasons
+- **Awaken creature** → API queue (no on-chain inject)
+- Wallet connect + Monad network switch
+- Passport contract read/write when `VITE_GARDEN_CONTRACT_ADDRESS` set
+- Local mock fallback if API is down
+
+## API routes
+
+| Method | Path |
+|--------|------|
+| GET | `/api/health` (prod) or `/health` (local API) |
+| GET | `/api/v1/garden/wallet/:address` |
+| GET | `/api/v1/garden/collection/:address` |
+| GET | `/api/v1/nfts/:chainId/:collection/:tokenId` |
+| POST | `/api/v1/nfts/.../analyze` |
+| POST | `/api/v1/nfts/.../creature` |
+| GET | `/api/v1/meta/product` |
+
+## Contract (Hardhat)
 
 ```bash
 cp .env.example .env
+# set PRIVATE_KEY + RPC
 npm run compile
 npm run deploy:monad
 ```
 
-For mainnet deploys, run:
+Then set `VITE_GARDEN_CONTRACT_ADDRESS` and redeploy FE.
 
-```bash
-npx hardhat run scripts/deploy.ts --network monadMainnet
+- Mainnet chain ID `143` — `https://rpc.monad.xyz`
+- Testnet chain ID `10143` — `https://testnet-rpc.monad.xyz`
+
+## Repo layout
+
+```text
+src/           React sandbox UI
+server/        Hono API (local + source for Vercel)
+api/           Vercel serverless entry → Hono
+contracts/     NFTGardenPassport.sol
+docs/          Architecture
 ```
 
-After deploy, set `VITE_GARDEN_CONTRACT_ADDRESS` in `.env`, restart the dev server, then use the modal buttons:
+## Credits
 
-- `Write check-in` stores `collection`, `tokenId`, `healthScore`, `spriteCid`, and `dataCid`.
-- `Read on-chain` reads the stored check-in by the same collection and token ID.
-
-Verify after deploy:
-
-```bash
-npm run verify:monad -- <deployed_contract_address>
-```
-
-Official references:
-
-- Deploy contracts: https://docs.monad.xyz/guides/deploy-smart-contract/index
-- Verify contracts: https://docs.monad.xyz/guides/verify-smart-contract/index
-- Network info: https://docs.monad.xyz/developer-essentials/testnets
+Frontend prototype inspired by [Decka-tan/monad-nft-garden](https://github.com/Decka-tan/monad-nft-garden). Backend + Vercel wiring for the living sandbox product.

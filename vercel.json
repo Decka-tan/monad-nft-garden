@@ -1,0 +1,15 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "installCommand": "npm install && npm install --prefix server --omit=dev",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" }
+  ],
+  "functions": {
+    "api/index.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
+}

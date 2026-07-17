@@ -18,6 +18,11 @@ export type NftHealth = {
   colors: [string, string];
   size: number;
   tilt: number;
+  /** Optional fields from Garden API */
+  collection?: string;
+  reasons?: string[];
+  creatureStatus?: string;
+  spriteUrl?: string | null;
 };
 
 const names = [
@@ -114,6 +119,9 @@ export function statusLabel(status: Status) {
 }
 
 export function buildReason(nft: NftHealth) {
+  if (nft.reasons && nft.reasons.length) {
+    return nft.reasons.join(" ");
+  }
   if (nft.status === "alive") {
     return "Healthy floor retention, enough recent trades, and broad holder spread make this collection look active instead of abandoned.";
   }

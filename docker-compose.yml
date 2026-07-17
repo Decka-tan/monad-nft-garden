@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: garden
+      POSTGRES_PASSWORD: garden
+      POSTGRES_DB: nft_garden
+    ports:
+      - "5432:5432"
+    volumes:
+      - garden_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U garden -d nft_garden"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: garden
+      MINIO_ROOT_PASSWORD: gardensecret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - garden_minio:/data
+
+  # API runs on host via `npm run dev -w server` by default (faster DX).
+  # Uncomment to containerize:
+  # api:
+  #   build: ./server
+  #   ports: ["8787:8787"]
+  #   environment:
+  #     DATABASE_URL: postgres://garden:garden@postgres:5432/nft_garden
+  #     REDIS_URL: redis://redis:6379
+  #     MOCK_MODE: "true"
+  #   depends_on:
+  #     postgres: { condition: service_healthy }
+  #     redis: { condition: service_healthy }
+
+volumes:
+  garden_pg:
+  garden_minio:

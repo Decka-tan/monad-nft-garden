@@ -2,22 +2,32 @@
   "name": "monad-nft-garden",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 3010 --strictPort",
-    "build": "tsc && vite build",
+    "dev:web": "vite --host 127.0.0.1 --port 3010 --strictPort",
+    "dev:api": "npm run dev --prefix server",
+    "dev:all": "npm run dev:api & npm run dev:web",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "build:api": "npm run build --prefix server",
     "preview": "vite preview --host 127.0.0.1 --port 3010 --strictPort",
     "compile": "hardhat compile",
     "deploy:monad": "hardhat run scripts/deploy.ts --network monadTestnet",
     "deploy:monad:testnet": "hardhat run scripts/deploy.ts --network monadTestnet",
     "deploy:monad:mainnet": "hardhat run scripts/deploy.ts --network monadMainnet",
-    "verify:monad": "hardhat verify --network monadTestnet"
+    "verify:monad": "hardhat verify --network monadTestnet",
+    "infra:up": "docker compose up -d postgres redis minio",
+    "infra:down": "docker compose down"
   },
   "dependencies": {
+    "@hono/node-server": "^1.14.1",
     "@vitejs/plugin-react": "^5.0.4",
     "ethers": "^6.15.0",
+    "hono": "^4.7.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "zod": "^3.24.3"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",

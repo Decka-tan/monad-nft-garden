@@ -1,7 +1,8 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { BrowserProvider, Contract, ethers } from "ethers";
 import { buildReason, makeCollection, NftHealth, statusLabel, Status } from "./data";
 import { GARDEN_ABI, GARDEN_CONTRACT_ADDRESS, getCheckInKey, MONAD_NETWORKS, MonadNetworkKey } from "./contract";
+import { fetchGarden, fetchGardenCollection, getApiBase, queueCreature } from "./api";
 
 const demoWallet = "0x7d3A5a0F56f2E9fb000000000000000000000001";
 const demoCollection = "0x0000000000000000000000000000000000000001";
@@ -53,6 +54,7 @@ function Creature({ nft, large = false, useSprite = false }: { nft: NftHealth; l
   const spriteId = String(((nft.id - 1) % 20) + 1).padStart(2, "0");
   const overlayOffset = nft.status === "alive" ? 0 : nft.status === "watch" ? 3 : 6;
   const overlayId = String(overlayOffset + ((nft.id - 1) % 3) + 1).padStart(2, "0");
+  const spriteSrc = nft.spriteUrl || `/assets/creatures/creature-${spriteId}.png`;
 
   return (
     <>
@@ -70,7 +72,7 @@ function Creature({ nft, large = false, useSprite = false }: { nft: NftHealth; l
           } as React.CSSProperties
         }
       >
-        {useSprite && <img className="creature-sprite" src={`/assets/creatures/creature-${spriteId}.png`} alt="" />}
+        {useSprite && <img className="creature-sprite" src={spriteSrc} alt="" />}
         {useSprite && <img className="health-overlay" src={`/assets/overlays/health-${overlayId}.png`} alt="" />}
         <span className="creature-leaf" aria-hidden="true" />
         <span className="creature-face" aria-hidden="true">
@@ -100,7 +102,7 @@ async function getBrowserProvider() {
   if (!window.ethereum) {
     throw new Error("No injected wallet found. Install MetaMask or another EIP-1193 wallet.");
   }
-  return new BrowserProvider(window.ethereum);
+  return new BrowserProvider(window.ethereum as ethers.Eip1193Provider);
 }
 
 async function switchToMonad(networkKey: MonadNetworkKey) {
@@ -133,6 +135,9 @@ export default function App() {
   const [referenceImage, setReferenceImage] = useState("/assets/featured-specimen.png");
   const [chain, setChain] = useState<ChainState>(initialChain);
   const [networkKey, setNetworkKey] = useState<MonadNetworkKey>("testnet");
+  const [loading, setLoading] = useState(false);
+  const [dataSource, setDataSource] = useState("local-mock");
+  const [apiNote, setApiNote] = useState("");
 
   const visible = useMemo(() => nfts.filter((nft) => filter === "all" || nft.status === filter), [filter, nfts]);
   const counts = useMemo(
@@ -146,11 +151,11 @@ export default function App() {
       ),
     [nfts],
   );
-  const portfolioScore = Math.round(nfts.reduce((sum, nft) => sum + nft.score, 0) / nfts.length);
-  const topAth = Math.max(...nfts.map((nft) => nft.floorAth));
-  const avgFloor = nfts.reduce((sum, nft) => sum + nft.floorNow, 0) / nfts.length;
+  const portfolioScore = Math.round(nfts.reduce((sum, nft) => sum + nft.score, 0) / Math.max(nfts.length, 1));
+  const topAth = Math.max(...nfts.map((nft) => nft.floorAth), 0);
+  const avgFloor = nfts.reduce((sum, nft) => sum + nft.floorNow, 0) / Math.max(nfts.length, 1);
   const holders = nfts.reduce((sum, nft) => sum + nft.holders, 0);
-  const lastTrade = Math.max(8, 90 - nfts[0].trades);
+  const lastTrade = Math.max(8, 90 - (nfts[0]?.trades || 0));
   const canWriteCheckIn =
     isContractConfigured() &&
     ethers.isAddress(contractInput) &&
@@ -159,12 +164,57 @@ export default function App() {
     chain.owner !== "Deploy contract, then set VITE_GARDEN_CONTRACT_ADDRESS" &&
     chain.account.toLowerCase() === chain.owner.toLowerCase();
 
+  const chainIdNum = networkKey === "mainnet" ? 143 : 10143;
+
+  async function loadGarden(seedWallet: string, seedCollection: string) {
+    setLoading(true);
+    setApiNote("");
+    try {
+      const useCollection = ethers.isAddress(seedCollection) && seedCollection !== demoCollection && !seedWallet.trim();
+      const result = useCollection
+        ? await fetchGardenCollection(seedCollection, chainIdNum)
+        : await fetchGarden(seedWallet.trim() || seedCollection.trim() || demoWallet, chainIdNum);
+
+      setNfts(result.nfts);
+      setDataSource(result.source);
+      setSelected(null);
+      if (result.nfts[0]?.collection && ethers.isAddress(result.nfts[0].collection)) {
+        setContractInput(result.nfts[0].collection);
+      }
+      setChain((current) => ({
+        ...current,
+        onchainScore: "",
+        txHash: "",
+        status: `API analysis (${result.source}) via ${getApiBase()}`,
+      }));
+      if (result.limitations?.length) {
+        setApiNote(result.limitations[0]);
+      }
+    } catch (error) {
+      const seed = seedWallet.trim() || seedCollection.trim() || "monad-demo-wallet";
+      setNfts(makeCollection(seed));
+      setDataSource("local-fallback");
+      setSelected(null);
+      setChain((current) => ({
+        ...current,
+        onchainScore: "",
+        txHash: "",
+        status: `API offline — local mock fallback (${error instanceof Error ? error.message : "error"})`,
+      }));
+      setApiNote("Garden API unreachable; showing deterministic local mock.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadGarden(demoWallet, demoCollection);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function analyze(event: FormEvent) {
     event.preventDefault();
-    const seed = walletInput.trim() || contractInput.trim() || "monad-demo-wallet";
-    setNfts(makeCollection(seed));
-    setSelected(null);
-    setChain((current) => ({ ...current, onchainScore: "", txHash: "", status: "Local analysis refreshed" }));
+    void loadGarden(walletInput, contractInput);
   }
 
   async function connectWallet() {
@@ -189,6 +239,8 @@ export default function App() {
       }
 
       setChain(next);
+      setWalletInput(account);
+      void loadGarden(account, contractInput);
     } catch (error) {
       setChain((current) => ({ ...current, status: error instanceof Error ? error.message : "Wallet connection failed" }));
     }
@@ -245,6 +297,32 @@ export default function App() {
     }
   }
 
+  async function awakenCreature(nft: NftHealth) {
+    try {
+      const collection = nft.collection || contractInput;
+      if (!ethers.isAddress(collection)) {
+        throw new Error("Need a full collection 0x address to queue creature generation.");
+      }
+      setChain((current) => ({ ...current, status: "Queueing creature generation…" }));
+      const result = await queueCreature({
+        chainId: chainIdNum,
+        collection,
+        tokenId: nft.tokenId,
+        persona: `${nft.name} in the Monad garden`,
+      });
+      setChain((current) => ({
+        ...current,
+        status: `Creature ${result.creature?.status || "queued"} (API, no on-chain inject)`,
+      }));
+      window.setTimeout(() => void loadGarden(walletInput, contractInput), 1000);
+    } catch (error) {
+      setChain((current) => ({
+        ...current,
+        status: error instanceof Error ? error.message : "Creature queue failed",
+      }));
+    }
+  }
+
   function handleImage(file: File | undefined) {
     if (!file) return;
     const reader = new FileReader();
@@ -283,7 +361,7 @@ export default function App() {
 
       <section className="hero compact-hero" aria-labelledby="hero-title">
         <div className="hero-copy">
-          <p className="kicker">Monad testnet garden desk</p>
+          <p className="kicker">Is Monad NFT really dead? We make these alive with this Sandbox.</p>
           <h1 id="hero-title">Is Monad NFT really dead?</h1>
           <p className="hero-text">
             Drop a wallet or collection into the planter. Each token gets a little garden body, a health mood,
@@ -294,28 +372,64 @@ export default function App() {
               <span>Wallet or contract</span>
               <input value={walletInput} onChange={(event) => setWalletInput(event.target.value)} spellCheck={false} placeholder="0x..." />
             </label>
-            <button className="primary-button" type="submit">
-              Analyze
+            <button className="primary-button" type="submit" disabled={loading}>
+              {loading ? "Analyzing…" : "Analyze"}
             </button>
           </form>
           <div className="signal-row" aria-label="Summary metrics">
-            <div><strong>{counts.alive}</strong><span>sprouting</span></div>
-            <div><strong>{counts.watch}</strong><span>wilt watch</span></div>
-            <div><strong>{counts.dead}</strong><span>dormant</span></div>
+            <div>
+              <strong>{counts.alive}</strong>
+              <span>sprouting</span>
+            </div>
+            <div>
+              <strong>{counts.watch}</strong>
+              <span>wilt watch</span>
+            </div>
+            <div>
+              <strong>{counts.dead}</strong>
+              <span>dormant</span>
+            </div>
           </div>
+          {apiNote && (
+            <p className="hero-text" style={{ opacity: 0.8, fontSize: "0.9rem" }}>
+              {apiNote}
+            </p>
+          )}
         </div>
 
         <aside className="snapshot" aria-label="Garden health snapshot">
-          <div className="snapshot-head"><span>Garden score</span><strong>{portfolioScore}</strong></div>
+          <div className="snapshot-head">
+            <span>Garden score</span>
+            <strong>{portfolioScore}</strong>
+          </div>
           <div className="health-orbit" aria-hidden="true">
             <img src="/assets/featured-specimen.png" alt="" />
-            <span /><span /><span /><span />
+            <span />
+            <span />
+            <span />
+            <span />
           </div>
           <dl className="snapshot-list">
-            <div><dt>Floor ATH</dt><dd>{topAth.toFixed(1)} MON</dd></div>
-            <div><dt>Current floor</dt><dd>{avgFloor.toFixed(1)} MON</dd></div>
-            <div><dt>Holders</dt><dd>{holders.toLocaleString()}</dd></div>
-            <div><dt>Last trade</dt><dd>{lastTrade}m ago</dd></div>
+            <div>
+              <dt>Floor ATH</dt>
+              <dd>{topAth.toFixed(1)} MON</dd>
+            </div>
+            <div>
+              <dt>Current floor</dt>
+              <dd>{avgFloor.toFixed(1)} MON</dd>
+            </div>
+            <div>
+              <dt>Holders</dt>
+              <dd>{holders.toLocaleString()}</dd>
+            </div>
+            <div>
+              <dt>Last trade</dt>
+              <dd>{lastTrade}m ago</dd>
+            </div>
+            <div>
+              <dt>Data</dt>
+              <dd>{dataSource}</dd>
+            </div>
           </dl>
         </aside>
       </section>
@@ -325,15 +439,34 @@ export default function App() {
           <div className="panel-section">
             <h2>Garden ledger</h2>
             <p>{chain.status}</p>
+            <p style={{ opacity: 0.75, fontSize: "0.85rem" }}>API: {getApiBase()}</p>
           </div>
           <div className="panel-section chain-card">
             <dl>
-              <div><dt>Account</dt><dd>{shortAddress(chain.account)}</dd></div>
-              <div><dt>Chain</dt><dd>{chain.chainId || "Not connected"}</dd></div>
-              <div><dt>Garden contract</dt><dd>{shortAddress(GARDEN_CONTRACT_ADDRESS)}</dd></div>
-              <div><dt>Owner</dt><dd>{chain.owner ? shortAddress(chain.owner) : "Unknown"}</dd></div>
-              <div><dt>Last check-in</dt><dd>{chain.onchainScore || "None read"}</dd></div>
-              <div><dt>Last tx</dt><dd>{chain.txHash ? shortAddress(chain.txHash) : "None"}</dd></div>
+              <div>
+                <dt>Account</dt>
+                <dd>{shortAddress(chain.account)}</dd>
+              </div>
+              <div>
+                <dt>Chain</dt>
+                <dd>{chain.chainId || "Not connected"}</dd>
+              </div>
+              <div>
+                <dt>Garden contract</dt>
+                <dd>{shortAddress(GARDEN_CONTRACT_ADDRESS)}</dd>
+              </div>
+              <div>
+                <dt>Owner</dt>
+                <dd>{chain.owner ? shortAddress(chain.owner) : "Unknown"}</dd>
+              </div>
+              <div>
+                <dt>Last check-in</dt>
+                <dd>{chain.onchainScore || "None read"}</dd>
+              </div>
+              <div>
+                <dt>Last tx</dt>
+                <dd>{chain.txHash ? shortAddress(chain.txHash) : "None"}</dd>
+              </div>
             </dl>
           </div>
           <div className="panel-section">
@@ -353,10 +486,18 @@ export default function App() {
           <div className="panel-section">
             <h3>Health formula</h3>
             <ul className="formula-list">
-              <li><span>40%</span> floor resilience</li>
-              <li><span>25%</span> recent trades</li>
-              <li><span>20%</span> holder spread</li>
-              <li><span>15%</span> rarity and traits</li>
+              <li>
+                <span>40%</span> floor resilience
+              </li>
+              <li>
+                <span>25%</span> recent trades
+              </li>
+              <li>
+                <span>20%</span> holder spread
+              </li>
+              <li>
+                <span>15%</span> rarity and traits
+              </li>
             </ul>
           </div>
         </aside>
@@ -365,7 +506,9 @@ export default function App() {
           <div className="garden-toolbar">
             <div>
               <h2>Specimen beds</h2>
-              <p>20 NFTs analyzed from {walletInput.slice(0, 10)}...</p>
+              <p>
+                {nfts.length} NFTs analyzed from {walletInput.slice(0, 10)}… · {statusLabel("alive")} sandbox
+              </p>
             </div>
             <div className="filter-group" role="group" aria-label="Filter NFTs">
               {(["all", "alive", "watch", "dead"] as Array<Status | "all">).map((item) => (
@@ -383,8 +526,8 @@ export default function App() {
                 key={nft.id}
                 style={
                   {
-                    "--x": `${slots[nft.id - 1][0]}%`,
-                    "--y": `${slots[nft.id - 1][1]}%`,
+                    "--x": `${slots[(nft.id - 1) % slots.length][0]}%`,
+                    "--y": `${slots[(nft.id - 1) % slots.length][1]}%`,
                   } as React.CSSProperties
                 }
               >
@@ -393,9 +536,11 @@ export default function App() {
                   <span className="nft-meta">
                     <span>
                       <strong>{nft.name}</strong>
-                      <span>#{String(nft.id).padStart(3, "0")} / score {nft.score}</span>
+                      <span>
+                        #{String(nft.id).padStart(3, "0")} / score {nft.score}
+                      </span>
                     </span>
-                  <span className="status-pill">{nft.status === "alive" ? "Sprout" : nft.status === "watch" ? "Watch" : "Dormant"}</span>
+                    <span className="status-pill">{nft.status === "alive" ? "Sprout" : nft.status === "watch" ? "Watch" : "Dormant"}</span>
                   </span>
                 </button>
               </article>
@@ -406,19 +551,31 @@ export default function App() {
 
       {selected && (
         <div className="modal-backdrop" role="presentation" onClick={() => setSelected(null)}>
-          <section className="detail-modal is-open" role="dialog" aria-modal="true" aria-labelledby="modal-title" onClick={(event) => event.stopPropagation()}>
+          <section
+            className="detail-modal is-open"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="modal-shell">
-              <button className="close-button" type="button" onClick={() => setSelected(null)}>Close</button>
+              <button className="close-button" type="button" onClick={() => setSelected(null)}>
+                Close
+              </button>
               <div className={`modal-art ${selected.status}`}>
                 {referenceImage && <img className="reference-image" src={referenceImage} alt="" />}
                 <Creature nft={selected} large />
               </div>
               <div className="modal-body">
-                <p className="kicker">{selected.status === "alive" ? "Sprout" : selected.status === "watch" ? "Watch" : "Dormant"} / health score {selected.score}</p>
-                <h2 id="modal-title">{selected.name} #{String(selected.id).padStart(3, "0")}</h2>
+                <p className="kicker">
+                  {selected.status === "alive" ? "Sprout" : selected.status === "watch" ? "Watch" : "Dormant"} / health score {selected.score}
+                </p>
+                <h2 id="modal-title">
+                  {selected.name} #{String(selected.id).padStart(3, "0")}
+                </h2>
                 <p>
-                  This specimen is grown from token activity: floor resilience, trade pulse, holder spread,
-                  and rarity signals all nudge the garden mood.
+                  This specimen is grown from token activity: floor resilience, trade pulse, holder spread, and rarity signals all nudge the garden
+                  mood.
                 </p>
                 <dl className="metric-grid">
                   {[
@@ -426,12 +583,15 @@ export default function App() {
                     ["Minted by", selected.minter],
                     ["Floor ATH", `${selected.floorAth.toFixed(1)} MON`],
                     ["Current floor", `${selected.floorNow.toFixed(1)} MON`],
-                    ["24h trades", selected.trades],
+                    ["Trades (30d)", selected.trades],
                     ["Holders", selected.holders.toLocaleString()],
                     ["Traits", selected.traits],
                     ["Rarity rank", `#${selected.rarity}`],
                   ].map(([label, value]) => (
-                    <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+                    <div key={String(label)}>
+                      <dt>{label}</dt>
+                      <dd>{value}</dd>
+                    </div>
                   ))}
                 </dl>
                 <div className="modal-actions">
@@ -444,7 +604,12 @@ export default function App() {
                   >
                     Write check-in
                   </button>
-                  <button className="ghost-button" type="button" onClick={() => readCheckIn(selected)}>Read on-chain</button>
+                  <button className="ghost-button" type="button" onClick={() => readCheckIn(selected)}>
+                    Read on-chain
+                  </button>
+                  <button className="ghost-button" type="button" onClick={() => awakenCreature(selected)}>
+                    Awaken creature
+                  </button>
                 </div>
                 <div className="reason-box">
                   <h3>Why this score?</h3>

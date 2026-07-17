@@ -1,0 +1,30 @@
+{
+  "name": "@monad-nft-garden/server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.1",
+    "drizzle-orm": "^0.43.1",
+    "hono": "^4.7.7",
+    "ioredis": "^5.6.1",
+    "postgres": "^3.4.5",
+    "viem": "^2.28.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.19.3",
+    "typescript": "~5.8.2"
+  }
+}
