@@ -1,3 +1,6 @@
+import { useRef } from "react";
+import { LandingMotion } from "./MotionDirector";
+
 type Props = {
   onDemo: () => void;
   onConnect: () => void;
@@ -9,13 +12,15 @@ export function LandingPage({
   onConnect,
   walletStatus,
 }: Props) {
+  const rootRef = useRef<HTMLElement>(null);
   const showError =
     /failed|rejected|denied|no wallet|install/i.test(
       walletStatus,
     );
 
   return (
-    <main className="landing-page">
+    <main className="landing-page" ref={rootRef}>
+      <LandingMotion root={rootRef} />
       <nav className="landing-nav" aria-label="Primary">
         <a className="landing-brand" href="#top">
           <img src="/assets/ui/logo-icon.png" alt="" />

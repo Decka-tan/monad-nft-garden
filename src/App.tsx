@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import type { NftHealth } from "./types";
 import { Topbar } from "./components/Topbar";
 import { Hero } from "./components/Hero";
@@ -6,10 +6,12 @@ import { ControlPanel } from "./components/ControlPanel";
 import { GardenGrid } from "./components/GardenGrid";
 import { NftModal } from "./components/NftModal";
 import { LandingPage } from "./components/LandingPage";
+import { GardenMotion } from "./components/MotionDirector";
 import { useGardenApp } from "./hooks/useGardenApp";
 
 export default function App() {
   const app = useGardenApp();
+  const gardenRootRef = useRef<HTMLElement>(null);
   const [entered, setEntered] = useState(() =>
     new URLSearchParams(window.location.search).has("garden"),
   );
@@ -67,7 +69,8 @@ export default function App() {
   }
 
   return (
-    <main className="garden-app">
+    <main className="garden-app" ref={gardenRootRef}>
+      <GardenMotion root={gardenRootRef} />
       <Topbar
         networkKey={app.networkKey}
         onNetwork={app.setNetworkKey}
