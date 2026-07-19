@@ -4,6 +4,11 @@ A Proof of Care dApp for Monad NFTs. It translates market signals into a living 
 
 **Pitch:** *See the signal. Care for the NFT. Leave an on-chain record.*
 
+## Monad deployment
+
+- Network: Monad Mainnet (`143`)
+- `NFTGardenPassport`: [`0xc9FB1366ab996c3319bD33C8fc1bb4AAb6b56720`](https://monadscan.com/address/0xc9FB1366ab996c3319bD33C8fc1bb4AAb6b56720)
+
 ## Stack
 
 | Layer | Tech |
@@ -69,7 +74,8 @@ npm run infra:up   # postgres + redis + minio
 | `MOCK_MODE` | `true` | Default; works without DB |
 | `DEFAULT_CHAIN_ID` | `10143` | Monad testnet |
 | `CORS_ORIGIN` | `*` | Or your production domain |
-| `VITE_GARDEN_CONTRACT_ADDRESS` | `0x...` | After contract deploy |
+| `VITE_GARDEN_TESTNET_CONTRACT_ADDRESS` | `0x...` | Optional testnet passport |
+| `VITE_GARDEN_MAINNET_CONTRACT_ADDRESS` | `0xc9FB...6720` | Deployed mainnet passport |
 | `VITE_GARDEN_API_URL` | *(leave empty)* | Same-origin `/api` on Vercel |
 
 5. Deploy. Open the URL -> enter the demo garden -> inspect an NFT -> verify the ERC-721 read -> record **Proof of Care**.

@@ -1,7 +1,8 @@
 // thin re-export for older paths
 export {
   MONAD_NETWORKS,
-  GARDEN_CONTRACT_ADDRESS,
+  GARDEN_CONTRACT_ADDRESSES,
+  gardenContractAddressFor,
   GARDEN_ABI,
   getCheckInKey,
   chainIdFor,

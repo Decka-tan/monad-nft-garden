@@ -112,6 +112,7 @@ export default function App() {
           contractInput={app.contractInput}
           onContractChange={app.setContractInput}
           dataSource={app.dataSource}
+          networkKey={app.networkKey}
         />
       </section>
 

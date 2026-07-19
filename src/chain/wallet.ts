@@ -1,15 +1,18 @@
 import { BrowserProvider, ethers } from "ethers";
 import {
-  GARDEN_CONTRACT_ADDRESS,
   MONAD_NETWORKS,
+  gardenContractAddressFor,
   type MonadNetworkKey,
 } from "./config";
 import { ZERO_ADDRESS } from "../constants";
 
-export function isContractConfigured() {
+export function isContractConfigured(
+  networkKey: MonadNetworkKey,
+) {
+  const contractAddress = gardenContractAddressFor(networkKey);
   return (
-    ethers.isAddress(GARDEN_CONTRACT_ADDRESS) &&
-    GARDEN_CONTRACT_ADDRESS !== ZERO_ADDRESS
+    ethers.isAddress(contractAddress) &&
+    contractAddress !== ZERO_ADDRESS
   );
 }
 

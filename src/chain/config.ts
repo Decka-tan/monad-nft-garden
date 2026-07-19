@@ -38,9 +38,26 @@ export const MONAD_NETWORKS = {
 
 export type MonadNetworkKey = keyof typeof MONAD_NETWORKS;
 
-export const GARDEN_CONTRACT_ADDRESS =
-  import.meta.env.VITE_GARDEN_CONTRACT_ADDRESS ||
+const zeroAddress =
   "0x0000000000000000000000000000000000000000";
+const legacyContractAddress =
+  import.meta.env.VITE_GARDEN_CONTRACT_ADDRESS;
+
+export const GARDEN_CONTRACT_ADDRESSES = {
+  testnet:
+    import.meta.env.VITE_GARDEN_TESTNET_CONTRACT_ADDRESS ||
+    legacyContractAddress ||
+    zeroAddress,
+  mainnet:
+    import.meta.env.VITE_GARDEN_MAINNET_CONTRACT_ADDRESS ||
+    "0xc9FB1366ab996c3319bD33C8fc1bb4AAb6b56720",
+} as const;
+
+export function gardenContractAddressFor(
+  networkKey: MonadNetworkKey,
+) {
+  return GARDEN_CONTRACT_ADDRESSES[networkKey];
+}
 
 export const GARDEN_ABI = [
   "function owner() view returns (address)",

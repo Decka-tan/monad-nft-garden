@@ -1,4 +1,7 @@
-import { GARDEN_CONTRACT_ADDRESS } from "../chain/config";
+import {
+  gardenContractAddressFor,
+  type MonadNetworkKey,
+} from "../chain/config";
 import { shortAddress } from "../lib/format";
 import type { ChainState } from "../types";
 
@@ -7,6 +10,7 @@ type Props = {
   contractInput: string;
   onContractChange: (value: string) => void;
   dataSource: string;
+  networkKey: MonadNetworkKey;
 };
 
 export function ControlPanel({
@@ -14,6 +18,7 @@ export function ControlPanel({
   contractInput,
   onContractChange,
   dataSource,
+  networkKey,
 }: Props) {
   const isDemo =
     dataSource === "mock" || dataSource.includes("local");
@@ -45,7 +50,9 @@ export function ControlPanel({
         </div>
         <div>
           <dt>Passport</dt>
-          <dd>{shortAddress(GARDEN_CONTRACT_ADDRESS)}</dd>
+          <dd>
+            {shortAddress(gardenContractAddressFor(networkKey))}
+          </dd>
         </div>
         <div>
           <dt>Last care read</dt>

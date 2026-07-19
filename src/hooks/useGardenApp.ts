@@ -100,7 +100,7 @@ export function useGardenApp() {
   const lastTrade = Math.max(8, 90 - (nfts[0]?.trades || 0));
 
   const canWriteCheckIn =
-    isContractConfigured() &&
+    isContractConfigured(networkKey) &&
     ethers.isAddress(contractInput) &&
     Boolean(chain.account);
 

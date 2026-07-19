@@ -2,8 +2,8 @@ import { Contract, JsonRpcProvider } from "ethers";
 import type { NftHealth } from "../types";
 import {
   GARDEN_ABI,
-  GARDEN_CONTRACT_ADDRESS,
   MONAD_NETWORKS,
+  gardenContractAddressFor,
   getCheckInKey,
   type MonadNetworkKey,
 } from "./config";
@@ -18,7 +18,7 @@ export async function readCheckIn(
   nft: NftHealth,
   networkKey: MonadNetworkKey,
 ) {
-  if (!isContractConfigured()) {
+  if (!isContractConfigured(networkKey)) {
     throw new Error(
       "Set VITE_GARDEN_CONTRACT_ADDRESS after deploy.",
     );
@@ -28,7 +28,7 @@ export async function readCheckIn(
     MONAD_NETWORKS[networkKey].rpcUrls[0],
   );
   const contract = new Contract(
-    GARDEN_CONTRACT_ADDRESS,
+    gardenContractAddressFor(networkKey),
     GARDEN_ABI,
     provider,
   );
@@ -51,7 +51,7 @@ export async function writeCheckIn(params: {
   nft: NftHealth;
   networkKey: MonadNetworkKey;
 }) {
-  if (!isContractConfigured()) {
+  if (!isContractConfigured(params.networkKey)) {
     throw new Error(
       "Set VITE_GARDEN_CONTRACT_ADDRESS after deploy.",
     );
@@ -61,7 +61,7 @@ export async function writeCheckIn(params: {
   const provider = await getBrowserProvider();
   const signer = await provider.getSigner();
   const contract = new Contract(
-    GARDEN_CONTRACT_ADDRESS,
+    gardenContractAddressFor(params.networkKey),
     GARDEN_ABI,
     signer,
   );
@@ -92,9 +92,9 @@ export async function connectAndLoadOwner(
   const account = await signer.getAddress();
 
   let owner = "Deploy contract, then set address";
-  if (isContractConfigured()) {
+  if (isContractConfigured(networkKey)) {
     const contract = new Contract(
-      GARDEN_CONTRACT_ADDRESS,
+      gardenContractAddressFor(networkKey),
       GARDEN_ABI,
       provider,
     );
