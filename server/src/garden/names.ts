@@ -40,7 +40,7 @@ export const TRAIT_TYPES = [
 ];
 
 export const MOCK_LIMITS = [
-  "MOCK_MODE: stats are offline demos, not live market data",
+  "Demo mode: sample health signals, not live market data.",
   "Creature sprites are placeholders until gen worker is wired",
-  "This is an NFT sandbox API — no email/SMTP",
+  "No email or notification service is included.",
 ];

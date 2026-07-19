@@ -3,6 +3,10 @@ pragma solidity ^0.8.24;
 
 /// @title NFTGardenPassport
 /// @notice Stores off-chain generated sprite CIDs and lightweight health check-ins for Monad NFT Garden.
+interface IERC721Owner {
+    function ownerOf(uint256 tokenId) external view returns (address);
+}
+
 contract NFTGardenPassport {
     struct CheckIn {
         uint64 updatedAt;
@@ -23,6 +27,7 @@ contract NFTGardenPassport {
     );
 
     error NotOwner();
+    error NotTokenOwner();
     error InvalidScore();
     error InvalidOwner();
 
@@ -41,8 +46,11 @@ contract NFTGardenPassport {
         uint16 healthScore,
         string calldata spriteCid,
         string calldata dataCid
-    ) external onlyOwner {
+    ) external {
         if (healthScore > 100) revert InvalidScore();
+        if (IERC721Owner(collection).ownerOf(tokenId) != msg.sender) {
+            revert NotTokenOwner();
+        }
 
         bytes32 key = keccak256(abi.encode(collection, tokenId));
         checkIns[key] = CheckIn({

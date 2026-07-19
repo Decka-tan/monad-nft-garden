@@ -118,6 +118,13 @@ export function mockGarden(
     buildNft(base, index, chainId, collection, ownerHint),
   );
 
+  if (
+    chainId === 10143 &&
+    collection === "0xe7f129fac3a5eeca642af10f93adee8c969fdb03"
+  ) {
+    nfts[0].tokenId = "3";
+  }
+
   const counts = { alive: 0, watch: 0, dead: 0 };
   for (const nft of nfts) counts[nft.status] += 1;
 

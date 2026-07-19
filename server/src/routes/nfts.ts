@@ -97,7 +97,7 @@ nftRoutes.post(
       analyzedAt: new Date().toISOString(),
       nft: detail,
       note: config.mockMode
-        ? "MOCK_MODE: analyze is deterministic, no market fetch"
+        ? "Demo analysis is deterministic and does not fetch a live market feed."
         : "Job queued for stats refresh",
     });
   },

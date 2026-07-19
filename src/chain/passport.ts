@@ -1,8 +1,9 @@
-import { Contract } from "ethers";
+import { Contract, JsonRpcProvider } from "ethers";
 import type { NftHealth } from "../types";
 import {
   GARDEN_ABI,
   GARDEN_CONTRACT_ADDRESS,
+  MONAD_NETWORKS,
   getCheckInKey,
   type MonadNetworkKey,
 } from "./config";
@@ -15,6 +16,7 @@ import {
 export async function readCheckIn(
   collection: string,
   nft: NftHealth,
+  networkKey: MonadNetworkKey,
 ) {
   if (!isContractConfigured()) {
     throw new Error(
@@ -22,7 +24,9 @@ export async function readCheckIn(
     );
   }
 
-  const provider = await getBrowserProvider();
+  const provider = new JsonRpcProvider(
+    MONAD_NETWORKS[networkKey].rpcUrls[0],
+  );
   const contract = new Contract(
     GARDEN_CONTRACT_ADDRESS,
     GARDEN_ABI,
@@ -46,7 +50,6 @@ export async function writeCheckIn(params: {
   collection: string;
   nft: NftHealth;
   networkKey: MonadNetworkKey;
-  owner: string;
 }) {
   if (!isContractConfigured()) {
     throw new Error(
@@ -57,17 +60,6 @@ export async function writeCheckIn(params: {
   await switchToMonad(params.networkKey);
   const provider = await getBrowserProvider();
   const signer = await provider.getSigner();
-  const account = await signer.getAddress();
-
-  if (
-    params.owner &&
-    account.toLowerCase() !== params.owner.toLowerCase()
-  ) {
-    throw new Error(
-      "Only the garden contract owner can write.",
-    );
-  }
-
   const contract = new Contract(
     GARDEN_CONTRACT_ADDRESS,
     GARDEN_ABI,

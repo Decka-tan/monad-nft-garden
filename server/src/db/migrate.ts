@@ -10,7 +10,7 @@ async function main() {
   const sql = postgres(config.databaseUrl, { max: 1 });
   const drizzleDir = join(__dirname, "../../drizzle");
   if (!existsSync(drizzleDir)) {
-    console.log("[migrate] no drizzle/ folder yet — run npm run db:generate first or use MOCK_MODE without DB");
+    console.log("[migrate] no drizzle/ folder yet; run npm run db:generate first or use MOCK_MODE without DB");
     await sql.end();
     return;
   }

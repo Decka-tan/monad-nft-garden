@@ -31,7 +31,7 @@ API: `http://127.0.0.1:8787`
 curl -s http://127.0.0.1:8787/health | jq
 curl -s http://127.0.0.1:8787/v1/meta/product | jq
 curl -s http://127.0.0.1:8787/v1/garden/wallet/0x7d3A5a0F56f2E9fb000000000000000000000001 | jq '.portfolioScore,.counts'
-curl -s http://127.0.0.1:8787/v1/nfts/10143/0x0000000000000000000000000000000000000001/1001 | jq '.status,.floorNow,.creature'
+curl -s http://127.0.0.1:8787/v1/nfts/10143/0xe7f129fac3a5eeca642af10f93adee8c969fdb03/3 | jq '.status,.floorNow,.creature'
 ```
 
 ## Optional infra
@@ -58,4 +58,4 @@ Then set `MOCK_MODE=false` later when live adapters land.
 | POST | `/v1/nfts/:chainId/:collection/:tokenId/creature` |
 | GET | `/v1/nfts/:chainId/:collection/:tokenId/creature` |
 
-Creature POST **queues generation only** — never writes the passport contract (wallet does that from FE).
+Creature POST **queues generation only**; it never writes the passport contract (wallet does that from FE).

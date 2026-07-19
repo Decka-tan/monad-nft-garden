@@ -29,8 +29,12 @@ export async function postJson<T>(
   path: string,
   body: unknown,
 ): Promise<T> {
-  const url = `${getApiBase()}${path}`;
-  const res = await fetch(url, {
+  const url = new URL(
+    `${getApiBase()}${path}`,
+    window.location.origin,
+  );
+
+  const res = await fetch(url.toString(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

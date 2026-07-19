@@ -12,6 +12,7 @@
     "build:api": "npm run build --prefix server",
     "preview": "vite preview --host 127.0.0.1 --port 3010 --strictPort",
     "compile": "hardhat compile",
+    "test:contract": "hardhat test",
     "deploy:monad": "hardhat run scripts/deploy.ts --network monadTestnet",
     "deploy:monad:testnet": "hardhat run scripts/deploy.ts --network monadTestnet",
     "deploy:monad:mainnet": "hardhat run scripts/deploy.ts --network monadMainnet",
@@ -20,6 +21,8 @@
     "infra:down": "docker compose down"
   },
   "dependencies": {
+    "@fontsource-variable/fredoka": "^5.2.10",
+    "@fontsource-variable/nunito-sans": "^5.2.7",
     "@hono/node-server": "^1.14.1",
     "@vitejs/plugin-react": "^5.0.4",
     "ethers": "^6.15.0",

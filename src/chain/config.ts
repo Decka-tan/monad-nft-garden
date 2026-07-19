@@ -18,9 +18,9 @@ export const MONAD_NETWORKS = {
       symbol: "MON",
       decimals: 18,
     },
-    rpcUrls: [testnetRpc],
+    rpcUrls: [testnetRpc, "https://rpc.testnet.monad.xyz"],
     blockExplorerUrls: [
-      "https://testnet.monadvision.com",
+      "https://testnet.monadscan.com",
     ],
   },
   mainnet: {

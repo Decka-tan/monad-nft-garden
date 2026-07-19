@@ -6,113 +6,78 @@ type Props = {
   chain: ChainState;
   contractInput: string;
   onContractChange: (value: string) => void;
-  referenceImage: string;
-  onImage: (file: File | undefined) => void;
-  apiBase: string;
+  dataSource: string;
 };
 
 export function ControlPanel({
   chain,
   contractInput,
   onContractChange,
-  referenceImage,
-  onImage,
-  apiBase,
+  dataSource,
 }: Props) {
+  const isDemo =
+    dataSource === "mock" || dataSource.includes("local");
+
   return (
-    <aside className="control-panel">
-      <div className="panel-section">
-        <h2>Garden ledger</h2>
-        <p>{chain.status}</p>
-        <p style={{ opacity: 0.75, fontSize: "0.85rem" }}>
-          API: {apiBase}
+    <aside className="field-notes" aria-label="Care record">
+      <div className="notes-heading">
+        <span>Care record</span>
+        <h2>Proof of Care</h2>
+        <p>
+          Diagnose off-chain. Preserve the latest care record
+          on Monad.
         </p>
       </div>
 
-      <div className="panel-section chain-card">
-        <dl>
-          <div>
-            <dt>Account</dt>
-            <dd>{shortAddress(chain.account)}</dd>
-          </div>
-          <div>
-            <dt>Chain</dt>
-            <dd>{chain.chainId || "Not connected"}</dd>
-          </div>
-          <div>
-            <dt>Garden contract</dt>
-            <dd>{shortAddress(GARDEN_CONTRACT_ADDRESS)}</dd>
-          </div>
-          <div>
-            <dt>Owner</dt>
-            <dd>
-              {chain.owner
-                ? shortAddress(chain.owner)
-                : "Unknown"}
-            </dd>
-          </div>
-          <div>
-            <dt>Last check-in</dt>
-            <dd>{chain.onchainScore || "None read"}</dd>
-          </div>
-          <div>
-            <dt>Last tx</dt>
-            <dd>
-              {chain.txHash
-                ? shortAddress(chain.txHash)
-                : "None"}
-            </dd>
-          </div>
-        </dl>
+      <div className="source-disclosure">
+        <strong>{isDemo ? "Demo market model" : "Live garden data"}</strong>
+        <p>
+          {isDemo
+            ? "Health values are deterministic sample data. Contract reads are always labeled separately."
+            : "Garden health was returned by the configured data service."}
+        </p>
       </div>
 
-      <div className="panel-section">
-        <label className="input-wrap compact">
-          <span>Collection contract</span>
-          <input
-            value={contractInput}
-            onChange={(e) =>
-              onContractChange(e.target.value)
-            }
-          />
-        </label>
-        <label className="input-wrap compact">
-          <span>Sprite reference</span>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) =>
-              onImage(e.target.files?.[0])
-            }
-          />
-        </label>
-        <div className="sample-card">
-          <img
-            src={referenceImage}
-            alt="Reference NFT sprite"
-          />
-          <span>
-            Reference pinned for the selected specimen
-          </span>
+      <dl className="care-ledger">
+        <div>
+          <dt>Wallet</dt>
+          <dd>{shortAddress(chain.account)}</dd>
         </div>
-      </div>
+        <div>
+          <dt>Passport</dt>
+          <dd>{shortAddress(GARDEN_CONTRACT_ADDRESS)}</dd>
+        </div>
+        <div>
+          <dt>Last care read</dt>
+          <dd>{chain.onchainScore || "No record read"}</dd>
+        </div>
+        <div>
+          <dt>Transaction</dt>
+          <dd>{chain.txHash ? shortAddress(chain.txHash) : "None"}</dd>
+        </div>
+      </dl>
 
-      <div className="panel-section">
-        <h3>Health formula</h3>
-        <ul className="formula-list">
-          <li>
-            <span>40%</span> floor resilience
-          </li>
-          <li>
-            <span>25%</span> recent trades
-          </li>
-          <li>
-            <span>20%</span> holder spread
-          </li>
-          <li>
-            <span>15%</span> rarity and traits
-          </li>
-        </ul>
+      <p className="chain-status" role="status">
+        {chain.status}
+      </p>
+
+      <label className="contract-field">
+        <span>NFT collection contract</span>
+        <input
+          value={contractInput}
+          onChange={(event) =>
+            onContractChange(event.target.value)
+          }
+          spellCheck={false}
+        />
+      </label>
+
+      <div className="formula">
+        <h3>What shapes health</h3>
+        <div><span>Floor resilience</span><strong>40%</strong></div>
+        <div><span>Trade pulse</span><strong>25%</strong></div>
+        <div><span>Holder spread</span><strong>20%</strong></div>
+        <div><span>Rarity signal</span><strong>15%</strong></div>
       </div>
     </aside>
   );

@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import type { NftHealth, Status } from "../types";
 import { PLOT_SLOTS } from "../constants";
-import { statusLabel, statusPill } from "../lib/format";
+import { statusPill } from "../lib/format";
 import { Creature } from "./Creature";
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
   onFilter: (value: Status | "all") => void;
   walletPreview: string;
   onSelect: (nft: NftHealth) => void;
+  loading: boolean;
 };
 
 const FILTERS: Array<Status | "all"> = [
@@ -34,15 +35,15 @@ export function GardenGrid({
   onFilter,
   walletPreview,
   onSelect,
+  loading,
 }: Props) {
   return (
     <div className="garden-wrap">
       <div className="garden-toolbar">
         <div>
-          <h2>Specimen beds</h2>
+          <h2>The garden</h2>
           <p>
-            {nfts.length} NFTs analyzed from{" "}
-            {walletPreview}… · {statusLabel("alive")} sandbox
+            {nfts.length} creatures seeded from {walletPreview}...
           </p>
         </div>
         <div
@@ -63,7 +64,23 @@ export function GardenGrid({
         </div>
       </div>
 
-      <div className="garden garden-world" aria-live="polite">
+      <div
+        className={`garden garden-world ${loading ? "is-loading" : ""}`}
+        aria-busy={loading}
+        aria-live="polite"
+      >
+        {loading && (
+          <div className="garden-loading">
+            <span />
+            <strong>Reading the garden</strong>
+          </div>
+        )}
+        {!loading && visible.length === 0 && (
+          <div className="garden-empty">
+            <strong>No creatures in this bed.</strong>
+            <span>Choose another health filter.</span>
+          </div>
+        )}
         {visible.map((nft) => {
           const slot =
             PLOT_SLOTS[(nft.id - 1) % PLOT_SLOTS.length];
@@ -78,7 +95,7 @@ export function GardenGrid({
               key={nft.id}
               style={style}
             >
-              <Creature nft={nft} />
+              <Creature nft={nft} useSprite />
               <button
                 className="plot-button"
                 type="button"

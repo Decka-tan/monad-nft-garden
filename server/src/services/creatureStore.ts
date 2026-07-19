@@ -48,7 +48,7 @@ class CreatureStore {
       mood: "awakening",
       persona:
         persona ||
-        `Sandbox creature for ${short}…#${tokenId}`,
+        `Sandbox creature for ${short}...#${tokenId}`,
       prompt:
         `pixel art 64x64 monad garden creature, ` +
         `token ${tokenId}`,

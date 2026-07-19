@@ -6,6 +6,7 @@ type Props = {
   onNetwork: (key: MonadNetworkKey) => void;
   account: string;
   onConnect: () => void;
+  onHome: () => void;
 };
 
 export function Topbar({
@@ -13,13 +14,21 @@ export function Topbar({
   onNetwork,
   account,
   onConnect,
+  onHome,
 }: Props) {
   return (
     <nav className="topbar" aria-label="Primary">
-      <a className="brand" href="#">
-        <span className="brand-mark" aria-hidden="true" />
-        <span>Monad NFT Garden</span>
-      </a>
+      <button className="brand" type="button" onClick={onHome}>
+        <img
+          className="brand-icon"
+          src="/assets/ui/logo-icon.png"
+          alt=""
+        />
+        <span>
+          <strong>Monad</strong>
+          <small>NFT Garden</small>
+        </span>
+      </button>
       <div className="nav-actions">
         <div
           className="network-toggle"
@@ -46,14 +55,6 @@ export function Topbar({
         >
           {account ? shortAddress(account) : "Connect"}
         </button>
-        <a
-          className="ghost-button"
-          href="https://docs.monad.xyz/guides/deploy-smart-contract/index"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Deploy docs
-        </a>
       </div>
     </nav>
   );

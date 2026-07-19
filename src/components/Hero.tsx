@@ -23,92 +23,68 @@ export function Hero({
   counts,
   apiNote,
   portfolioScore,
-  topAth,
   avgFloor,
   holders,
   lastTrade,
   dataSource,
 }: Props) {
+  const sourceLabel =
+    dataSource === "mock" || dataSource.includes("local")
+      ? "Demo model"
+      : "Live data";
+
   return (
-    <section
-      className="hero compact-hero"
-      aria-labelledby="hero-title"
-    >
-      <div className="hero-copy">
-        <p className="kicker">
-          Is Monad NFT really dead? We make these alive with
-          this Sandbox.
-        </p>
-        <h1 id="hero-title">Is Monad NFT really dead?</h1>
-        <p className="hero-text">
-          Drop a wallet or collection into the planter. Each
-          token gets a little garden body, a health mood, and
-          an on-chain check-in when you want to stamp it.
-        </p>
-        <form className="scan-form" onSubmit={onAnalyze}>
-          <label className="input-wrap">
-            <span>Wallet or contract</span>
-            <input
-              value={walletInput}
-              onChange={(e) => onWalletChange(e.target.value)}
-              spellCheck={false}
-              placeholder="0x..."
-            />
-          </label>
-          <button
-            className="primary-button"
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? "Analyzing…" : "Analyze"}
-          </button>
-        </form>
-        <div className="signal-row" aria-label="Summary metrics">
-          <div>
-            <strong>{counts.alive}</strong>
-            <span>sprouting</span>
-          </div>
-          <div>
-            <strong>{counts.watch}</strong>
-            <span>wilt watch</span>
-          </div>
-          <div>
-            <strong>{counts.dead}</strong>
-            <span>dormant</span>
-          </div>
+    <header className="garden-header">
+      <div className="garden-heading">
+        <div className="source-label">
+          <span>{sourceLabel}</span>
+          <span>Monad</span>
         </div>
-        {apiNote && (
-          <p
-            className="hero-text"
-            style={{ opacity: 0.8, fontSize: "0.9rem" }}
-          >
-            {apiNote}
-          </p>
-        )}
+        <h1>Your collection, as a living system.</h1>
+        <p>
+          Every creature translates four market signals into
+          one health state you can understand at a glance.
+        </p>
       </div>
 
-      <aside
-        className="snapshot"
-        aria-label="Garden health snapshot"
-      >
-        <div className="snapshot-head">
-          <span>Garden score</span>
+      <form className="garden-search" onSubmit={onAnalyze}>
+        <label>
+          <span>Wallet or collection</span>
+          <input
+            value={walletInput}
+            onChange={(event) =>
+              onWalletChange(event.target.value)
+            }
+            placeholder="0x..."
+            spellCheck={false}
+          />
+        </label>
+        <button type="submit" disabled={loading}>
+          {loading ? "Reading..." : "Grow garden"}
+        </button>
+        {apiNote && <small role="status">{apiNote}</small>}
+      </form>
+
+      <div className="garden-stats" aria-label="Garden health">
+        <div className="score-stat">
           <strong>{portfolioScore}</strong>
+          <span>garden health</span>
         </div>
-        <div className="health-orbit" aria-hidden="true">
-          <img src="/assets/featured-specimen.png" alt="" />
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
-        <dl className="snapshot-list">
+        <dl>
           <div>
-            <dt>Floor ATH</dt>
-            <dd>{topAth.toFixed(1)} MON</dd>
+            <dt>Thriving</dt>
+            <dd>{counts.alive}</dd>
           </div>
           <div>
-            <dt>Current floor</dt>
+            <dt>Needs care</dt>
+            <dd>{counts.watch}</dd>
+          </div>
+          <div>
+            <dt>Dormant</dt>
+            <dd>{counts.dead}</dd>
+          </div>
+          <div>
+            <dt>Avg. floor</dt>
             <dd>{avgFloor.toFixed(1)} MON</dd>
           </div>
           <div>
@@ -116,15 +92,11 @@ export function Hero({
             <dd>{holders.toLocaleString()}</dd>
           </div>
           <div>
-            <dt>Last trade</dt>
-            <dd>{lastTrade}m ago</dd>
-          </div>
-          <div>
-            <dt>Data</dt>
-            <dd>{dataSource}</dd>
+            <dt>Trade pulse</dt>
+            <dd>{lastTrade}m</dd>
           </div>
         </dl>
-      </aside>
-    </section>
+      </div>
+    </header>
   );
 }

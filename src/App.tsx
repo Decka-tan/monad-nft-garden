@@ -1,13 +1,18 @@
-import type { FormEvent } from "react";
+import { useState, type FormEvent } from "react";
+import type { NftHealth } from "./types";
 import { Topbar } from "./components/Topbar";
 import { Hero } from "./components/Hero";
 import { ControlPanel } from "./components/ControlPanel";
 import { GardenGrid } from "./components/GardenGrid";
 import { NftModal } from "./components/NftModal";
+import { LandingPage } from "./components/LandingPage";
 import { useGardenApp } from "./hooks/useGardenApp";
 
 export default function App() {
   const app = useGardenApp();
+  const [entered, setEntered] = useState(() =>
+    new URLSearchParams(window.location.search).has("garden"),
+  );
 
   function onAnalyze(event: FormEvent) {
     event.preventDefault();
@@ -17,13 +22,58 @@ export default function App() {
     );
   }
 
+  async function connectAndEnter() {
+    const connected = await app.handleConnect();
+    if (connected) enterGarden();
+  }
+
+  function enterGarden() {
+    window.history.replaceState(null, "", "?garden=1");
+    setEntered(true);
+  }
+
+  function leaveGarden() {
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname,
+    );
+    setEntered(false);
+  }
+
+  function selectNft(nft: NftHealth) {
+    const query = new URLSearchParams(window.location.search);
+    query.set("garden", "1");
+    query.set("nft", String(nft.tokenId));
+    window.history.replaceState(null, "", `?${query}`);
+    app.setSelected(nft);
+  }
+
+  function closeNft() {
+    const query = new URLSearchParams(window.location.search);
+    query.delete("nft");
+    window.history.replaceState(null, "", `?${query}`);
+    app.setSelected(null);
+  }
+
+  if (!entered) {
+    return (
+      <LandingPage
+        onDemo={enterGarden}
+        onConnect={() => void connectAndEnter()}
+        walletStatus={app.chain.status}
+      />
+    );
+  }
+
   return (
-    <main className="shell">
+    <main className="garden-app">
       <Topbar
         networkKey={app.networkKey}
         onNetwork={app.setNetworkKey}
         account={app.chain.account}
         onConnect={() => void app.handleConnect()}
+        onHome={leaveGarden}
       />
 
       <Hero
@@ -42,40 +92,39 @@ export default function App() {
       />
 
       <section
-        className="workspace garden-first"
+        className="garden-workspace"
         aria-label="NFT sandbox"
       >
-        <ControlPanel
-          chain={app.chain}
-          contractInput={app.contractInput}
-          onContractChange={app.setContractInput}
-          referenceImage={app.referenceImage}
-          onImage={app.handleImage}
-          apiBase={app.apiBase}
-        />
         <GardenGrid
           nfts={app.nfts}
           visible={app.visible}
           filter={app.filter}
           onFilter={app.setFilter}
           walletPreview={app.walletInput.slice(0, 10)}
-          onSelect={app.setSelected}
+          onSelect={selectNft}
+          loading={app.loading}
+        />
+        <ControlPanel
+          chain={app.chain}
+          contractInput={app.contractInput}
+          onContractChange={app.setContractInput}
+          dataSource={app.dataSource}
         />
       </section>
 
       {app.selected && (
         <NftModal
           nft={app.selected}
-          referenceImage={app.referenceImage}
           canWrite={app.canWriteCheckIn}
-          onClose={() => app.setSelected(null)}
+          onClose={closeNft}
           onWrite={() =>
             void app.handleWrite(app.selected!)
           }
           onRead={() => void app.handleRead(app.selected!)}
-          onAwaken={() =>
-            void app.handleAwaken(app.selected!)
+          onReadNft={() =>
+            void app.handleNftContractRead(app.selected!)
           }
+          nftRead={app.nftRead}
         />
       )}
     </main>

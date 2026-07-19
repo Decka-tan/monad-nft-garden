@@ -1,8 +1,8 @@
 # Monad NFT Garden
 
-A living NFT portfolio health sandbox for Monad. Each NFT becomes a creature whose mood reflects floor resilience, trade recency, holder spread, and rarity signals.
+A Proof of Care dApp for Monad NFTs. It translates market signals into a living garden, explains every health state, and lets the token owner preserve a care check-in on-chain.
 
-**Tagline:** *Is Monad NFT really dead? We make these alive with this Sandbox.*
+**Pitch:** *See the signal. Care for the NFT. Leave an on-chain record.*
 
 ## Stack
 
@@ -40,7 +40,7 @@ npm run dev
 ```
 
 Web: `http://127.0.0.1:3010`  
-Vite proxies `/api/*` → API `:8787`.
+Vite proxies `/api/*` -> API `:8787`.
 
 Or two terminals:
 
@@ -55,12 +55,12 @@ npm run dev:web
 npm run infra:up   # postgres + redis + minio
 ```
 
-`MOCK_MODE=true` (default) needs **no** database — deterministic garden data for demos.
+`MOCK_MODE=true` (default) needs **no** database - deterministic garden data for demos.
 
 ## Deploy on Vercel
 
 1. Push this repo to GitHub.
-2. [vercel.com/new](https://vercel.com/new) → import the repo.
+2. [vercel.com/new](https://vercel.com/new) -> import the repo.
 3. Framework: **Vite** (auto from `vercel.json`).
 4. Env vars (optional):
 
@@ -69,10 +69,10 @@ npm run infra:up   # postgres + redis + minio
 | `MOCK_MODE` | `true` | Default; works without DB |
 | `DEFAULT_CHAIN_ID` | `10143` | Monad testnet |
 | `CORS_ORIGIN` | `*` | Or your production domain |
-| `VITE_GARDEN_CONTRACT_ADDRESS` | `0x…` | After contract deploy |
+| `VITE_GARDEN_CONTRACT_ADDRESS` | `0x...` | After contract deploy |
 | `VITE_GARDEN_API_URL` | *(leave empty)* | Same-origin `/api` on Vercel |
 
-5. Deploy. Open the URL → Analyze wallet → click NFT → stats + **Awaken creature**.
+5. Deploy. Open the URL -> enter the demo garden -> inspect an NFT -> verify the ERC-721 read -> record **Proof of Care**.
 
 CLI:
 
@@ -82,13 +82,14 @@ npx vercel
 
 ## What works today
 
-- Wallet / collection analyze via **Garden API** (mock deterministic health)
-- 20-NFT sandbox grid + filters (alive / watch / dead)
-- Detail modal: minter, floor ATH/now, holders, traits, rarity, score reasons
-- **Awaken creature** → API queue (no on-chain inject)
-- Wallet connect + Monad network switch
-- Passport contract read/write when `VITE_GARDEN_CONTRACT_ADDRESS` set
-- Local mock fallback if API is down
+- Pre-connect product landing and instant demo garden
+- 20-creature health garden with thriving / watch / dormant filters
+- Explainable health model using floor resilience, trading pulse, holder spread, and rarity
+- Direct ERC-721 `ownerOf`, `name`, and `tokenURI` reads from Monad
+- Token-owner-only Proof of Care contract write and public record read
+- Honest demo-mode disclosure plus local fallback when the API is down
+
+The default market health values are deterministic demo data. ERC-721 and passport reads are separate on-chain operations and are labeled as such in the interface.
 
 ## API routes
 
@@ -113,15 +114,15 @@ npm run deploy:monad
 
 Then set `VITE_GARDEN_CONTRACT_ADDRESS` and redeploy FE.
 
-- Mainnet chain ID `143` — `https://rpc.monad.xyz`
-- Testnet chain ID `10143` — `https://testnet-rpc.monad.xyz`
+- Mainnet chain ID `143` - `https://rpc.monad.xyz`
+- Testnet chain ID `10143` - `https://testnet-rpc.monad.xyz`
 
 ## Repo layout
 
 ```text
 src/           React sandbox UI
 server/        Hono API (local + source for Vercel)
-api/           Vercel serverless entry → Hono
+api/           Vercel serverless entry -> Hono
 contracts/     NFTGardenPassport.sol
 docs/          Architecture
 ```
