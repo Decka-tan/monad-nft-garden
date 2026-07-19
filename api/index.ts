@@ -1,5 +1,5 @@
 import { handle } from "hono/vercel";
-import { createApp } from "../server/src/app";
+import { createApp } from "../server/dist/app.js";
 
 /**
  * Vercel serverless entry.
@@ -12,4 +12,8 @@ export const config = {
 
 const app = createApp({ basePath: "/api" });
 
-export default handle(app);
+const handler = handle(app);
+
+export const GET = handler;
+export const POST = handler;
+export const OPTIONS = handler;

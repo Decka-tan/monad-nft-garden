@@ -24,32 +24,16 @@ metaRoutes.get("/meta/chains", (c) =>
 metaRoutes.get("/meta/product", (c) =>
   c.json({
     name: "Monad NFT Garden",
-    tagline:
-      "Is Monad NFT really dead? " +
-      "We make these alive with this Sandbox.",
-    role: {
-      frontend: "sandbox UI + wallet",
-      backend:
-        "stats, creature brain, sprite gen, cache",
-      contract:
-        "lightweight passport (score + cids)",
+    tagline: "Verify the NFT. Care for it. Leave an on-chain record.",
+    problem:
+      "NFTs become static rows in a wallet with no history of collector care.",
+    solution:
+      "Read ownership and metadata from Monad, then preserve owner-authorized care on-chain.",
+    deployment: {
+      chainId: 143,
+      passport: "0xc9FB1366ab996c3319bD33C8fc1bb4AAb6b56720",
+      specimen: "0x837DC8f746608Ea3021930d59d58DDCa9B658f3E",
     },
-    mockMode: config.mockMode,
-  }),
-);
-
-metaRoutes.get("/meta/health-formula", (c) =>
-  c.json({
-    weights: {
-      floorResilience: 0.4,
-      recentTrades: 0.25,
-      holderSpread: 0.2,
-      rarityTraits: 0.15,
-    },
-    thresholds: {
-      alive: 70,
-      watch: 46,
-      dead: 0,
-    },
+    dataSources: ["Monad RPC", "NFTGardenPassport", "BlockVision (optional)"],
   }),
 );

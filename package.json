@@ -16,6 +16,7 @@
     "deploy:monad": "hardhat run scripts/deploy.ts --network monadTestnet",
     "deploy:monad:testnet": "hardhat run scripts/deploy.ts --network monadTestnet",
     "deploy:monad:mainnet": "hardhat run scripts/deploy.ts --network monadMainnet",
+    "deploy:seed:mainnet": "hardhat run scripts/deploy-demo-nft.ts --network monadMainnet",
     "verify:monad": "hardhat verify --network monadTestnet",
     "infra:up": "docker compose up -d postgres redis minio",
     "infra:down": "docker compose down"
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@openzeppelin/contracts": "^5.4.0",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

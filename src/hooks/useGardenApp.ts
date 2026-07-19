@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ethers } from "ethers";
 import {
-  fetchDemoGarden,
   fetchGarden,
   fetchGardenNft,
-  queueCreature,
 } from "../api/garden";
-import { getApiBase } from "../api/client";
 import {
   chainIdFor,
   type MonadNetworkKey,
@@ -23,8 +20,8 @@ import {
 import { isContractConfigured } from "../chain/wallet";
 import {
   DEMO_COLLECTION,
+  DEMO_TOKEN_ID,
 } from "../constants";
-import { makeCollection } from "../garden/mockCollection";
 import type { ChainState, NftHealth, Status } from "../types";
 
 const emptyChain: ChainState = {
@@ -37,26 +34,20 @@ const emptyChain: ChainState = {
 };
 
 export function useGardenApp() {
-  const [walletInput, setWalletInput] = useState(DEMO_COLLECTION);
   const [contractInput, setContractInput] =
     useState(DEMO_COLLECTION);
-  const [tokenInput, setTokenInput] = useState("3");
-  const [nfts, setNfts] = useState(() =>
-    makeCollection(DEMO_COLLECTION),
-  );
+  const [tokenInput, setTokenInput] = useState(DEMO_TOKEN_ID);
+  const [nfts, setNfts] = useState<NftHealth[]>([]);
   const [filter, setFilter] = useState<Status | "all">("all");
   const [selected, setSelected] =
     useState<NftHealth | null>(null);
-  const [referenceImage, setReferenceImage] = useState(
-    "/assets/featured-specimen.png",
-  );
   const [chain, setChain] = useState<ChainState>(emptyChain);
   const [networkKey, setNetworkKey] =
     useState<MonadNetworkKey>(() =>
       new URLSearchParams(window.location.search).get("network") ===
-      "mainnet"
-        ? "mainnet"
-        : "testnet",
+      "testnet"
+        ? "testnet"
+        : "mainnet",
     );
   const [loading, setLoading] = useState(false);
   const [dataSource, setDataSource] = useState("demo");
@@ -155,15 +146,22 @@ export function useGardenApp() {
     setLoading(true);
     setApiNote("");
     try {
-      const result = await fetchDemoGarden(
+      const result = await fetchGardenNft(
         DEMO_COLLECTION,
-        10143,
+        DEMO_TOKEN_ID,
+        143,
       );
       applyGardenResult(result);
-    } catch {
-      setNfts(makeCollection(DEMO_COLLECTION));
-      setDataSource("demo-local");
-      setApiNote("Local demo garden. Search reads stay live.");
+    } catch (error) {
+      const msg =
+        error instanceof Error ? error.message : "Live demo unavailable";
+      setNfts([]);
+      setDataSource("live-error");
+      setApiNote(msg);
+      setChain((cur) => ({
+        ...cur,
+        status: `Live specimen read failed: ${msg}`,
+      }));
     } finally {
       setLoading(false);
     }
@@ -210,13 +208,10 @@ export function useGardenApp() {
       } catch (error) {
         const msg =
           error instanceof Error ? error.message : "error";
-        setNfts([]);
-        setDataSource("live-error");
-        setSelected(null);
         setApiNote(msg);
         setChain((cur) => ({
           ...cur,
-          status: `Wallet index failed: ${msg}`,
+          status: `Connected. Wallet gallery unavailable: ${msg}`,
         }));
       } finally {
         setLoading(false);
@@ -242,7 +237,6 @@ export function useGardenApp() {
     try {
       const next = await connectAndLoadOwner(networkKey);
       setChain((cur) => ({ ...cur, ...next }));
-      setWalletInput(next.account);
       void loadWalletGarden(next.account);
       return true;
     } catch (error) {
@@ -356,55 +350,7 @@ export function useGardenApp() {
     setSelected(nft);
   }
 
-  async function handleAwaken(nft: NftHealth) {
-    try {
-      const collection = nft.collection || contractInput;
-      if (!ethers.isAddress(collection)) {
-        throw new Error(
-          "Need a full collection 0x address.",
-        );
-      }
-      setChain((cur) => ({
-        ...cur,
-        status: "Queueing creature generation...",
-      }));
-      const result = await queueCreature({
-        chainId: chainIdNum,
-        collection,
-        tokenId: nft.tokenId,
-        persona: `${nft.name} in the Monad garden`,
-      });
-      const st = result.creature?.status || "queued";
-      setChain((cur) => ({
-        ...cur,
-        status: `Creature ${st} (API, no on-chain inject)`,
-      }));
-      window.setTimeout(() => {
-        void loadLiveNft(collection, String(nft.tokenId));
-      }, 1000);
-    } catch (error) {
-      setChain((cur) => ({
-        ...cur,
-        status:
-          error instanceof Error
-            ? error.message
-            : "Creature queue failed",
-      }));
-    }
-  }
-
-  function handleImage(file: File | undefined) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      setReferenceImage(String(reader.result));
-    });
-    reader.readAsDataURL(file);
-  }
-
   return {
-    walletInput,
-    setWalletInput,
     contractInput,
     setContractInput,
     tokenInput,
@@ -415,7 +361,6 @@ export function useGardenApp() {
     selected,
     setSelected: selectNft,
     nftRead,
-    referenceImage,
     chain,
     networkKey,
     setNetworkKey,
@@ -437,9 +382,6 @@ export function useGardenApp() {
     handleConnect,
     handleRead,
     handleWrite,
-    handleAwaken,
     handleNftContractRead,
-    handleImage,
-    apiBase: getApiBase(),
   };
 }

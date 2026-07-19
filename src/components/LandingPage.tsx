@@ -61,7 +61,7 @@ export function LandingPage({
               type="button"
               onClick={onDemo}
             >
-              Open demo garden
+              Enter live garden
             </button>
             <button
               className="hero-secondary"

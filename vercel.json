@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build && npm run build:api",
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm install && npm install --prefix server --omit=dev",

@@ -10,7 +10,7 @@ export const config = {
     process.env.REDIS_URL ||
     "redis://127.0.0.1:6379",
   defaultChainId: Number(
-    process.env.DEFAULT_CHAIN_ID || 10143,
+    process.env.DEFAULT_CHAIN_ID || 143,
   ),
   mockMode:
     (process.env.MOCK_MODE || "false")

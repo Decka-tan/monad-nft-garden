@@ -3,5 +3,4 @@ export {
   fetchDemoGarden,
   fetchGarden,
   fetchGardenNft,
-  queueCreature,
 } from "./api/garden";

@@ -68,7 +68,11 @@ export async function writeCheckIn(params: {
   );
 
   const spriteCid = "";
-  const dataCid = params.nft.tokenUri || "";
+  const dataCid =
+    params.nft.tokenUri &&
+    !params.nft.tokenUri.startsWith("data:")
+      ? params.nft.tokenUri
+      : "";
 
   const tx = await contract.checkIn(
     params.collection,
