@@ -6,6 +6,7 @@ import { Creature } from "./Creature";
 
 type Props = {
   nft: NftHealth;
+  canRead: boolean;
   canWrite: boolean;
   onClose: () => void;
   onWrite: () => void;
@@ -20,6 +21,7 @@ type Props = {
 
 export function NftModal({
   nft,
+  canRead,
   canWrite,
   onClose,
   onWrite,
@@ -27,14 +29,29 @@ export function NftModal({
   onReadNft,
   nftRead,
 }: Props) {
-  const metrics: Array<[string, string | number]> = [
-    ["Floor ATH", `${nft.floorAth.toFixed(1)} MON`],
-    ["Current floor", `${nft.floorNow.toFixed(1)} MON`],
-    ["Trades in 30d", nft.trades],
-    ["Holders", nft.holders.toLocaleString()],
-    ["Traits", nft.traits],
-    ["Rarity rank", `#${nft.rarity}`],
-  ];
+  const isLive = nft.dataOrigin === "live";
+  const metrics: Array<[string, string | number]> = isLive
+    ? [
+        ["Owner", shortAddress(nft.owner || "")],
+        ["Collection", shortAddress(nft.collection || "")],
+        ["Token ID", `#${nft.tokenId}`],
+        ["Metadata traits", nft.traits],
+        [
+          "Proof of Care",
+          nft.proofUpdatedAt
+            ? new Date(nft.proofUpdatedAt).toLocaleDateString()
+            : "Not recorded",
+        ],
+        ["Source", "Monad RPC"],
+      ]
+    : [
+        ["Floor ATH", `${nft.floorAth.toFixed(1)} MON`],
+        ["Current floor", `${nft.floorNow.toFixed(1)} MON`],
+        ["Trades in 30d", nft.trades],
+        ["Holders", nft.holders.toLocaleString()],
+        ["Traits", nft.traits],
+        ["Rarity rank", `#${nft.rarity}`],
+      ];
 
   return (
     <div
@@ -59,11 +76,11 @@ export function NftModal({
         </button>
 
         <div className={`modal-creature ${nft.status}`}>
-          {nftRead.data?.imageUrl ? (
+          {nftRead.data?.imageUrl || nft.imageUrl ? (
             <img
               className="onchain-nft-image"
-              src={nftRead.data.imageUrl}
-              alt={nftRead.data.nftName}
+              src={nftRead.data?.imageUrl || nft.imageUrl || ""}
+              alt={nftRead.data?.nftName || nft.name}
             />
           ) : (
             <Creature nft={nft} large useSprite />
@@ -73,10 +90,12 @@ export function NftModal({
 
         <div className="modal-content">
           <p className="modal-status">
-            {statusPill(nft.status)} health
+            {statusPill(nft.status)} {isLive ? "care state" : "health"}
           </p>
           <h2 id="modal-title">
-            {nft.name} #{nft.tokenId}
+            {nft.name}
+            {!nft.name.includes(`#${nft.tokenId}`) &&
+              ` #${nft.tokenId}`}
           </h2>
           <p className="modal-reason">{buildReason(nft)}</p>
 
@@ -93,7 +112,9 @@ export function NftModal({
             <div>
               <h3>NFT contract</h3>
               <p>
-                Read ownership and metadata directly from Monad.
+                {isLive
+                  ? "Ownership and metadata verified by the live API."
+                  : "Read ownership and metadata directly from Monad."}
               </p>
             </div>
             <button
@@ -102,7 +123,7 @@ export function NftModal({
               onClick={onReadNft}
               disabled={nftRead.loading}
             >
-              {nftRead.loading ? "Reading..." : "Verify NFT"}
+              {nftRead.loading ? "Reading..." : isLive ? "Refresh NFT" : "Verify NFT"}
             </button>
 
             {nftRead.data && (
@@ -146,10 +167,18 @@ export function NftModal({
               className="ghost-button"
               type="button"
               onClick={onRead}
+              disabled={!canRead}
             >
               Read care record
             </button>
           </div>
+          {(!canRead || !canWrite) && (
+            <p className="proof-hint">
+              {!canRead
+                ? "Proof of Care is deployed on Monad Mainnet."
+                : "Connect the verified token owner to record care."}
+            </p>
+          )}
         </div>
       </section>
     </div>

@@ -10,11 +10,11 @@ Tagline: *Is Monad NFT really dead? We make these alive with this Sandbox.*
 - **Zod** validation
 - **PostgreSQL** + **Drizzle** (schema ready; optional for MOCK_MODE)
 - **Redis** / BullMQ (compose ready; jobs stubbed in-process for MVP)
-- **viem** reserved for live RPC adapters
+- **viem** for live Monad RPC reads
 
 See `/docs/BACKEND_STACK.md` for full architecture.
 
-## Quick start (mock, no DB required)
+## Quick start (no DB required)
 
 ```bash
 cd server
@@ -30,7 +30,8 @@ API: `http://127.0.0.1:8787`
 ```bash
 curl -s http://127.0.0.1:8787/health | jq
 curl -s http://127.0.0.1:8787/v1/meta/product | jq
-curl -s http://127.0.0.1:8787/v1/garden/wallet/0x7d3A5a0F56f2E9fb000000000000000000000001 | jq '.portfolioScore,.counts'
+curl -s 'http://127.0.0.1:8787/v1/garden/demo/0xe7f129fac3a5eeca642af10f93adee8c969fdb03?chainId=10143' | jq '.source,.counts'
+curl -s 'http://127.0.0.1:8787/v1/garden/nft/0xe7f129fac3a5eeca642af10f93adee8c969fdb03/3?chainId=10143' | jq '.source,.nfts[0].owner'
 curl -s http://127.0.0.1:8787/v1/nfts/10143/0xe7f129fac3a5eeca642af10f93adee8c969fdb03/3 | jq '.status,.floorNow,.creature'
 ```
 
@@ -42,7 +43,7 @@ From repo root:
 docker compose up -d postgres redis minio
 ```
 
-Then set `MOCK_MODE=false` later when live adapters land.
+Single-NFT reads are live through Monad RPC. Wallet discovery uses BlockVision when `BLOCKVISION_MAINNET_API_KEY` or `BLOCKVISION_TESTNET_API_KEY` is configured. The demo route remains deterministic and is always labeled as demo data.
 
 ## Routes
 
@@ -52,7 +53,8 @@ Then set `MOCK_MODE=false` later when live adapters land.
 | GET | `/v1/meta/chains` |
 | GET | `/v1/meta/product` |
 | GET | `/v1/garden/wallet/:address` |
-| GET | `/v1/garden/collection/:address` |
+| GET | `/v1/garden/nft/:collection/:tokenId` |
+| GET | `/v1/garden/demo/:collection` |
 | GET | `/v1/nfts/:chainId/:collection/:tokenId` |
 | POST | `/v1/nfts/:chainId/:collection/:tokenId/analyze` |
 | POST | `/v1/nfts/:chainId/:collection/:tokenId/creature` |

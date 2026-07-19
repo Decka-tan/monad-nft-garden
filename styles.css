@@ -417,7 +417,7 @@ button:disabled {
 
 .garden-search {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(240px, 1fr) 110px auto;
   align-self: end;
   gap: 9px;
 }
@@ -1085,6 +1085,17 @@ button:disabled {
   margin-top: 24px;
 }
 
+.proof-hint {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.care-ledger a {
+  color: #d2b8fa;
+  text-decoration: none;
+}
+
 .proof-actions button {
   min-height: 42px;
   padding: 0 16px;
@@ -1341,7 +1352,7 @@ button:disabled {
   }
 
   .network-toggle {
-    display: none;
+    display: flex;
   }
 
   .garden-heading h1 {

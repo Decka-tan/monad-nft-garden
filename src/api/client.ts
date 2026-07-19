@@ -18,8 +18,18 @@ export async function getJson<T>(path: string): Promise<T> {
   });
 
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API ${res.status}: ${body}`);
+    const text = await res.text();
+    try {
+      const body = JSON.parse(text) as { message?: string };
+      throw new Error(
+        body.message || `API request failed (${res.status}).`,
+      );
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error(`API request failed (${res.status}).`);
+      }
+      throw error;
+    }
   }
 
   return res.json() as Promise<T>;

@@ -1,4 +1,5 @@
 import {
+  MONAD_NETWORKS,
   gardenContractAddressFor,
   type MonadNetworkKey,
 } from "../chain/config";
@@ -7,21 +8,19 @@ import type { ChainState } from "../types";
 
 type Props = {
   chain: ChainState;
-  contractInput: string;
-  onContractChange: (value: string) => void;
   dataSource: string;
   networkKey: MonadNetworkKey;
 };
 
 export function ControlPanel({
   chain,
-  contractInput,
-  onContractChange,
   dataSource,
   networkKey,
 }: Props) {
   const isDemo =
-    dataSource === "mock" || dataSource.includes("local");
+    dataSource === "mock" || dataSource.startsWith("demo");
+  const liveFailed = dataSource === "live-error";
+  const passportAddress = gardenContractAddressFor(networkKey);
 
   return (
     <aside className="field-notes" aria-label="Care record">
@@ -35,11 +34,19 @@ export function ControlPanel({
       </div>
 
       <div className="source-disclosure">
-        <strong>{isDemo ? "Demo market model" : "Live garden data"}</strong>
+        <strong>
+          {isDemo
+            ? "Demo market model"
+            : liveFailed
+              ? "Live data unavailable"
+              : "Live garden data"}
+        </strong>
         <p>
           {isDemo
             ? "Health values are deterministic sample data. Contract reads are always labeled separately."
-            : "Garden health was returned by the configured data service."}
+            : liveFailed
+              ? "No placeholder portfolio was substituted. Check the inline provider error."
+              : "Ownership, metadata, and care freshness were read directly from Monad."}
         </p>
       </div>
 
@@ -51,7 +58,9 @@ export function ControlPanel({
         <div>
           <dt>Passport</dt>
           <dd>
-            {shortAddress(gardenContractAddressFor(networkKey))}
+            {/^0x0{40}$/i.test(passportAddress)
+              ? "Not deployed"
+              : shortAddress(passportAddress)}
           </dd>
         </div>
         <div>
@@ -60,7 +69,19 @@ export function ControlPanel({
         </div>
         <div>
           <dt>Transaction</dt>
-          <dd>{chain.txHash ? shortAddress(chain.txHash) : "None"}</dd>
+          <dd>
+            {chain.txHash ? (
+              <a
+                href={`${MONAD_NETWORKS[networkKey].blockExplorerUrls[0]}/tx/${chain.txHash}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {shortAddress(chain.txHash)}
+              </a>
+            ) : (
+              "None"
+            )}
+          </dd>
         </div>
       </dl>
 
@@ -68,23 +89,22 @@ export function ControlPanel({
         {chain.status}
       </p>
 
-      <label className="contract-field">
-        <span>NFT collection contract</span>
-        <input
-          value={contractInput}
-          onChange={(event) =>
-            onContractChange(event.target.value)
-          }
-          spellCheck={false}
-        />
-      </label>
-
       <div className="formula">
-        <h3>What shapes health</h3>
-        <div><span>Floor resilience</span><strong>40%</strong></div>
-        <div><span>Trade pulse</span><strong>25%</strong></div>
-        <div><span>Holder spread</span><strong>20%</strong></div>
-        <div><span>Rarity signal</span><strong>15%</strong></div>
+        <h3>{isDemo ? "Demo health model" : "Live care state"}</h3>
+        {isDemo ? (
+          <>
+            <div><span>Floor resilience</span><strong>40%</strong></div>
+            <div><span>Trade pulse</span><strong>25%</strong></div>
+            <div><span>Holder spread</span><strong>20%</strong></div>
+            <div><span>Rarity signal</span><strong>15%</strong></div>
+          </>
+        ) : (
+          <>
+            <div><span>Owner</span><strong>Verified</strong></div>
+            <div><span>Metadata</span><strong>Onchain URI</strong></div>
+            <div><span>Health</span><strong>Care freshness</strong></div>
+          </>
+        )}
       </div>
     </aside>
   );

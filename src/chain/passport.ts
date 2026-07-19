@@ -35,13 +35,14 @@ export async function readCheckIn(
   const key = getCheckInKey(collection, nft.tokenId);
   const result = await contract.checkIns(key);
   const score = Number(result.healthScore || 0);
+  const updatedAt = Number(result.updatedAt || 0);
 
-  if (!score) {
+  if (!updatedAt) {
     return "No on-chain check-in yet";
   }
 
   const when = new Date(
-    Number(result.updatedAt) * 1000,
+    updatedAt * 1000,
   ).toLocaleString();
   return `${score}/100 at ${when}`;
 }
@@ -66,10 +67,8 @@ export async function writeCheckIn(params: {
     signer,
   );
 
-  const spriteCid =
-    `ipfs://sprite-${params.nft.seed.toString(16)}`;
-  const dataCid =
-    `ipfs://analysis-${params.nft.seed.toString(16)}`;
+  const spriteCid = "";
+  const dataCid = params.nft.tokenUri || "";
 
   const tx = await contract.checkIn(
     params.collection,

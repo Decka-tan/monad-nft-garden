@@ -18,9 +18,16 @@ export default function App() {
 
   function onAnalyze(event: FormEvent) {
     event.preventDefault();
-    void app.loadGarden(
-      app.walletInput,
+    const query = new URLSearchParams(window.location.search);
+    query.set("garden", "1");
+    query.set("network", app.networkKey);
+    query.set("collection", app.contractInput);
+    query.set("token", app.tokenInput);
+    query.delete("nft");
+    window.history.replaceState(null, "", `?${query}`);
+    void app.loadLiveNft(
       app.contractInput,
+      app.tokenInput,
     );
   }
 
@@ -80,8 +87,10 @@ export default function App() {
       />
 
       <Hero
-        walletInput={app.walletInput}
-        onWalletChange={app.setWalletInput}
+        collectionInput={app.contractInput}
+        onCollectionChange={app.setContractInput}
+        tokenInput={app.tokenInput}
+        onTokenChange={app.setTokenInput}
         loading={app.loading}
         onAnalyze={onAnalyze}
         counts={app.counts}
@@ -92,6 +101,8 @@ export default function App() {
         holders={app.holders}
         lastTrade={app.lastTrade}
         dataSource={app.dataSource}
+        nftCount={app.nfts.length}
+        networkKey={app.networkKey}
       />
 
       <section
@@ -103,14 +114,12 @@ export default function App() {
           visible={app.visible}
           filter={app.filter}
           onFilter={app.setFilter}
-          walletPreview={app.walletInput.slice(0, 10)}
+          walletPreview={app.contractInput.slice(0, 10)}
           onSelect={selectNft}
           loading={app.loading}
         />
         <ControlPanel
           chain={app.chain}
-          contractInput={app.contractInput}
-          onContractChange={app.setContractInput}
           dataSource={app.dataSource}
           networkKey={app.networkKey}
         />
@@ -119,7 +128,13 @@ export default function App() {
       {app.selected && (
         <NftModal
           nft={app.selected}
-          canWrite={app.canWriteCheckIn}
+          canRead={app.passportConfigured}
+          canWrite={
+            app.canWriteCheckIn &&
+            Boolean(app.selected.owner) &&
+            app.chain.account.toLowerCase() ===
+              app.selected.owner?.toLowerCase()
+          }
           onClose={closeNft}
           onWrite={() =>
             void app.handleWrite(app.selected!)

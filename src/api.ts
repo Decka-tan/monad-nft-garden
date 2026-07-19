@@ -1,6 +1,7 @@
 export { getApiBase } from "./api/client";
 export {
+  fetchDemoGarden,
   fetchGarden,
-  fetchGardenCollection,
+  fetchGardenNft,
   queueCreature,
 } from "./api/garden";

@@ -1,8 +1,8 @@
 # Monad NFT Garden
 
-A Proof of Care dApp for Monad NFTs. It translates market signals into a living garden, explains every health state, and lets the token owner preserve a care check-in on-chain.
+A Proof of Care dApp for Monad NFTs. It verifies ownership and metadata, turns care freshness into a living garden state, and lets the token owner preserve a check-in on-chain.
 
-**Pitch:** *See the signal. Care for the NFT. Leave an on-chain record.*
+**Pitch:** *Verify the NFT. Care for it. Leave an on-chain record.*
 
 ## Monad deployment
 
@@ -14,7 +14,7 @@ A Proof of Care dApp for Monad NFTs. It translates market signals into a living 
 | Layer | Tech |
 |-------|------|
 | Frontend | React 19 + Vite + ethers |
-| Backend API | Hono + Zod (TypeScript) |
+| Backend API | Hono + Zod + BlockVision adapter (TypeScript) |
 | DB (optional) | PostgreSQL + Drizzle |
 | Cache/jobs (optional) | Redis + BullMQ |
 | Chain | Monad testnet/mainnet + `NFTGardenPassport` |
@@ -60,7 +60,7 @@ npm run dev:web
 npm run infra:up   # postgres + redis + minio
 ```
 
-`MOCK_MODE=true` (default) needs **no** database - deterministic garden data for demos.
+The visual demo needs no provider key. Live single-NFT reads use Monad RPC. Live wallet discovery uses the BlockVision account-NFT API and requires an API key.
 
 ## Deploy on Vercel
 
@@ -71,11 +71,13 @@ npm run infra:up   # postgres + redis + minio
 
 | Name | Value | Notes |
 |------|--------|------|
-| `MOCK_MODE` | `true` | Default; works without DB |
+| `MOCK_MODE` | `false` | Keep live routes explicit; demo has its own route |
 | `DEFAULT_CHAIN_ID` | `10143` | Monad testnet |
 | `CORS_ORIGIN` | `*` | Or your production domain |
 | `VITE_GARDEN_TESTNET_CONTRACT_ADDRESS` | `0x...` | Optional testnet passport |
 | `VITE_GARDEN_MAINNET_CONTRACT_ADDRESS` | `0xc9FB...6720` | Deployed mainnet passport |
+| `BLOCKVISION_MAINNET_API_KEY` | `...` | Live mainnet wallet NFT discovery |
+| `BLOCKVISION_TESTNET_API_KEY` | `...` | Live testnet wallet NFT discovery |
 | `VITE_GARDEN_API_URL` | *(leave empty)* | Same-origin `/api` on Vercel |
 
 5. Deploy. Open the URL -> enter the demo garden -> inspect an NFT -> verify the ERC-721 read -> record **Proof of Care**.
@@ -89,13 +91,14 @@ npx vercel
 ## What works today
 
 - Pre-connect product landing and instant demo garden
-- 20-creature health garden with thriving / watch / dormant filters
-- Explainable health model using floor resilience, trading pulse, holder spread, and rarity
-- Direct ERC-721 `ownerOf`, `name`, and `tokenURI` reads from Monad
+- Explicit 20-creature visual demo with thriving / watch / dormant filters
+- Live ERC-721 `ownerOf`, `name`, and `tokenURI` reads from Monad RPC
+- Optional live wallet NFT discovery through BlockVision
+- Care state derived from the latest on-chain Proof of Care timestamp
 - Token-owner-only Proof of Care contract write and public record read
 - Honest demo-mode disclosure plus local fallback when the API is down
 
-The default market health values are deterministic demo data. ERC-721 and passport reads are separate on-chain operations and are labeled as such in the interface.
+Demo values are deterministic and labeled. Live search never substitutes demo values after a provider or RPC failure.
 
 ## API routes
 
@@ -103,7 +106,8 @@ The default market health values are deterministic demo data. ERC-721 and passpo
 |--------|------|
 | GET | `/api/health` (prod) or `/health` (local API) |
 | GET | `/api/v1/garden/wallet/:address` |
-| GET | `/api/v1/garden/collection/:address` |
+| GET | `/api/v1/garden/nft/:collection/:tokenId` |
+| GET | `/api/v1/garden/demo/:collection` |
 | GET | `/api/v1/nfts/:chainId/:collection/:tokenId` |
 | POST | `/api/v1/nfts/.../analyze` |
 | POST | `/api/v1/nfts/.../creature` |

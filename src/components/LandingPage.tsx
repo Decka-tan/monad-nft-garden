@@ -52,8 +52,8 @@ export function LandingPage({
             Your NFTs are waiting for care.
           </h1>
           <p className="landing-intro">
-            Turn Monad holdings into living health signals,
-            then preserve every care check-in on-chain.
+            Verify a Monad NFT, turn care freshness into a
+            living state, and preserve each check-in on-chain.
           </p>
           <div className="landing-cta-row">
             <button
@@ -80,7 +80,7 @@ export function LandingPage({
 
         <div className="landing-proof" aria-label="Product summary">
           <strong>See the signal.</strong>
-          <span>Floor resilience, trade pulse, holder spread, rarity.</span>
+          <span>Ownership, metadata, token identity, care freshness.</span>
           <i aria-hidden="true" />
           <strong>Leave a record.</strong>
           <span>A lightweight Proof of Care stored on Monad.</span>

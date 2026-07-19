@@ -77,8 +77,16 @@ export function GardenGrid({
         )}
         {!loading && visible.length === 0 && (
           <div className="garden-empty">
-            <strong>No creatures in this bed.</strong>
-            <span>Choose another health filter.</span>
+            <strong>
+              {nfts.length
+                ? "No creatures in this bed."
+                : "No verified NFT loaded."}
+            </strong>
+            <span>
+              {nfts.length
+                ? "Choose another health filter."
+                : "Enter a collection and token ID above."}
+            </span>
           </div>
         )}
         {visible.map((nft) => {

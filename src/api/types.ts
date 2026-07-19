@@ -11,6 +11,8 @@ export type ApiNft = {
   collection: string;
   tokenId: string;
   name: string;
+  imageUrl?: string | null;
+  tokenUri?: string | null;
   minter: string;
   owner: string;
   floorAth: number;
@@ -27,6 +29,8 @@ export type ApiNft = {
   size: number;
   tilt: number;
   seed: number;
+  proofUpdatedAt?: string | null;
+  dataOrigin?: "demo" | "live";
   creature?: ApiCreature;
 };
 

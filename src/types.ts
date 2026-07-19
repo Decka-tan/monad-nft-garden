@@ -4,6 +4,9 @@ export type NftHealth = {
   id: number;
   tokenId: number;
   name: string;
+  imageUrl?: string | null;
+  tokenUri?: string | null;
+  owner?: string;
   seed: number;
   score: number;
   status: Status;
@@ -22,6 +25,8 @@ export type NftHealth = {
   reasons?: string[];
   creatureStatus?: string;
   spriteUrl?: string | null;
+  proofUpdatedAt?: string | null;
+  dataOrigin?: "demo" | "live";
 };
 
 export type ChainState = {

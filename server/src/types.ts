@@ -23,6 +23,7 @@ export type NftDetailDto = {
   tokenId: string;
   name: string;
   imageUrl: string | null;
+  tokenUri?: string | null;
   minter: string;
   owner: string;
   floorAth: number;
@@ -41,6 +42,8 @@ export type NftDetailDto = {
   size: number;
   tilt: number;
   seed: number;
+  proofUpdatedAt?: string | null;
+  dataOrigin?: "demo" | "live";
 };
 
 export type GardenResponse = {

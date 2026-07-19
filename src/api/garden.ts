@@ -27,13 +27,29 @@ export async function fetchGarden(
   return toResult(body);
 }
 
-export async function fetchGardenCollection(
+export async function fetchDemoGarden(
   collection: string,
   chainId?: number,
 ): Promise<GardenLoadResult> {
   const q = collection.trim();
   let path =
-    `/v1/garden/collection/${encodeURIComponent(q)}`;
+    `/v1/garden/demo/${encodeURIComponent(q)}`;
+  if (chainId) path += `?chainId=${chainId}`;
+  const body = await getJson<ApiGarden>(path);
+  return toResult(body);
+}
+
+export async function fetchGardenNft(
+  collection: string,
+  tokenId: string,
+  chainId?: number,
+): Promise<GardenLoadResult> {
+  const pathParts = [
+    "/v1/garden/nft",
+    encodeURIComponent(collection.trim()),
+    encodeURIComponent(tokenId.trim()),
+  ];
+  let path = pathParts.join("/");
   if (chainId) path += `?chainId=${chainId}`;
   const body = await getJson<ApiGarden>(path);
   return toResult(body);
