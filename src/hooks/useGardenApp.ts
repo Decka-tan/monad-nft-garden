@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ethers } from "ethers";
 import {
-  fetchGarden,
   fetchGardenNft,
 } from "../api/garden";
 import {
@@ -106,7 +105,7 @@ export function useGardenApp() {
   const chainIdNum = chainIdFor(networkKey);
 
   const applyGardenResult = useCallback(
-    (result: Awaited<ReturnType<typeof fetchGarden>>) => {
+    (result: Awaited<ReturnType<typeof fetchGardenNft>>) => {
       setNfts(result.nfts);
       setDataSource(result.source);
       const requestedToken = new URLSearchParams(
@@ -198,28 +197,6 @@ export function useGardenApp() {
     [applyGardenResult, chainIdNum],
   );
 
-  const loadWalletGarden = useCallback(
-    async (wallet: string) => {
-      setLoading(true);
-      setApiNote("");
-      try {
-        const result = await fetchGarden(wallet, chainIdNum);
-        applyGardenResult(result);
-      } catch (error) {
-        const msg =
-          error instanceof Error ? error.message : "error";
-        setApiNote(msg);
-        setChain((cur) => ({
-          ...cur,
-          status: `Connected. Wallet gallery unavailable: ${msg}`,
-        }));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [applyGardenResult, chainIdNum],
-  );
-
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     const collection = query.get("collection");
@@ -237,7 +214,6 @@ export function useGardenApp() {
     try {
       const next = await connectAndLoadOwner(networkKey);
       setChain((cur) => ({ ...cur, ...next }));
-      void loadWalletGarden(next.account);
       return true;
     } catch (error) {
       setChain((cur) => ({
@@ -378,7 +354,6 @@ export function useGardenApp() {
     passportConfigured,
     loadDemo,
     loadLiveNft,
-    loadWalletGarden,
     handleConnect,
     handleRead,
     handleWrite,

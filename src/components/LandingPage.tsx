@@ -68,7 +68,7 @@ export function LandingPage({
               type="button"
               onClick={onConnect}
             >
-              Grow my garden
+              Connect to care
             </button>
           </div>
           {showError && (
